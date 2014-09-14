@@ -5,7 +5,7 @@
 	<head>
 		<meta charset="utf-8">
 
-		<title>Dependent Types in Scala - Tips, Tricks and Techniques for Maximal Effect</title>
+		<title>Dependent Types in Scala - Some Tips, Tricks and Techniques</title>
 
 		<meta name="description" content="Dependent Types in Scala - Tips, Tricks and Techniques">
 		<meta name="author" content="Owein Reese">
@@ -19,7 +19,7 @@
 		<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/css/theme/sky.css" id="theme">
 
 		<!-- For syntax highlighting -->
-		<link rel="stylesheet" href="lib/css/zenburn.css">
+		<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/lib/css/zenburn.css">
 
 	</head>
 
@@ -30,23 +30,40 @@
 			<!-- Any section element inside of this container is displayed as a slide -->
 			<div class="slides">
 				<section>
-					<h1>Reveal.js</h1>
-					<h3>HTML Presentations Made Easy</h3>
+					<h1>Dependent Types in Scala</h1>
+					<h3>Some Tips, Tricks and Techniques</h3>
 					<p>
-						<small>Created by <a href="http://hakim.se">Hakim El Hattab</a> / <a href="http://twitter.com/hakimel">@hakimel</a></small>
+						<small><a href="https://twitter.com/OweinReese">@OweinReese</a></small>
 					</p>
 				</section>
 
 				<section>
-					<h2>Heads Up</h2>
-					<p>
-						reveal.js is a framework for easily creating beautiful presentations using HTML. You'll need a browser with
-						support for CSS 3D transforms to see it in its full glory.
-					</p>
+					<section>
+						<h2>What is a Dependent Type?</h2>
+						<pre class="fragment">
+							<code data-trim>
+trait DepValue{
+	type V
+	val value: V
+}
+							</code>
+						</pre>
+					</section>
+					<section>
+						<h2>...And They're Used How?<h2>
+							<pre>
+								<code data-trim>
+def mk[T](x: T) = new DepValue{ 
+	type V = T
+	val value = x
+}
+val depInt = mk(1)
+val depString = mk("two")
 
-					<aside class="notes">
-						Oh hey, these are some notes. They'll be hidden in your presentation, but you can see them if you open the speaker notes window (hit 's' on your keyboard).
-					</aside>
+def magic(that: DepValue): that.V = that.value
+								</code>
+							</pre>
+					</section>
 				</section>
 
 				<!-- Example of nested vertical slides -->
@@ -364,21 +381,17 @@ function linkify( selector ) {
 				</section>
 
 				<section>
-					<h1>THE END</h1>
-					<h3>BY Hakim El Hattab / hakim.se</h3>
+					<h1>Questions?</h1>
 				</section>
 
 			</div>
 
 		</div>
 
-		<script src="lib/js/head.min.js"></script>
-		<script src="js/reveal.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/lib/js/head.min.js"></script>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/js/reveal.min.js"></script>
 
 		<script>
-
-			// Full list of configuration options available here:
-			// https://github.com/hakimel/reveal.js#configuration
 			Reveal.initialize({
 				controls: true,
 				progress: true,
@@ -387,21 +400,30 @@ function linkify( selector ) {
 				overview: true,
 				touch: true,
 
-				theme: 'sky', // available themes are in /css/theme
+				theme: 'sky',
 				transition: 'slide', // none/fade/slide/convex/concave/zoom
 
 				// Parallax scrolling
 				// parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
 				// parallaxBackgroundSize: '2100px 900px',
 
-				// Optional libraries used to extend on reveal.js
 				dependencies: [
-					//{ src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
-					{ src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
-					{ src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
-					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }//,
-					//{ src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
-					//{ src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+					{ 
+						src: '//cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/lib/js/classList.js', 
+						condition: function() { return !document.body.classList; } 
+					},
+					{
+						src: '//cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/markdown/marked.js', 
+						condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ 
+						src: '//cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/markdown/markdown.js', 
+						condition: function() { return !!document.querySelector( '[data-markdown]' ); } 
+					},
+					{ 
+						src: '//cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/highlight/highlight.js', 
+						async: true, 
+						callback: function() { hljs.initHighlightingOnLoad(); } 
+					}
 				]
 			});
 
