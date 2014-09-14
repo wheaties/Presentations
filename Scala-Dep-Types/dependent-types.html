@@ -40,19 +40,22 @@
 				<section>
 					<section>
 						<h2>What is a Dependent Type?</h2>
-						<pre class="fragment">
-							<code data-trim>
+						<div class="fragment">
+							<p>It's an abstract type parameter tied to a class or trait.</p>
+							<pre><code data-trim>
 trait DepValue{
 	type V
 	val value: V
 }
-							</code>
-						</pre>
+
+def magic(that: DepValue): that.V = that.value
+							</code></pre>
+						</div>
+						<p class="fragment">The return type of "magic" <i>depends</i> on the argument passed in.</p>
 					</section>
 					<section>
-						<h2>...And They're Used How?<h2>
-							<pre>
-								<code data-trim>
+						<h4>Toy Example</h4>
+						<pre><code trim-data>
 def mk[T](x: T) = new DepValue{ 
 	type V = T
 	val value = x
@@ -60,42 +63,17 @@ def mk[T](x: T) = new DepValue{
 val depInt = mk(1)
 val depString = mk("two")
 
-def magic(that: DepValue): that.V = that.value
-								</code>
-							</pre>
+val itWorks: Int = magic(depInt)
+val again: String = magic(depString)
+						</code></pre>
+					</section>
+					<section>
+						<h4>Examples in Scala Standard Library</p>
 					</section>
 				</section>
 
-				<!-- Example of nested vertical slides -->
+
 				<section>
-					<section>
-						<h2>Vertical Slides</h2>
-						<p>
-							Slides can be nested inside of other slides,
-							try pressing <a href="#" class="navigate-down">down</a>.
-						</p>
-						<a href="#" class="navigate-down">
-							<img width="178" height="238" data-src="https://s3.amazonaws.com/hakim-static/reveal-js/arrow.png" alt="Down arrow">
-						</a>
-					</section>
-					<section>
-						<h2>Basement Level 1</h2>
-						<p>Press down or up to navigate.</p>
-					</section>
-					<section>
-						<h2>Basement Level 2</h2>
-						<p>Cornify</p>
-						<a class="test" href="http://cornify.com">
-							<img width="280" height="326" data-src="https://s3.amazonaws.com/hakim-static/reveal-js/cornify.gif" alt="Unicorn">
-						</a>
-					</section>
-					<section>
-						<h2>Basement Level 3</h2>
-						<p>That's it, time to go back up.</p>
-						<a href="#/2">
-							<img width="178" height="238" data-src="https://s3.amazonaws.com/hakim-static/reveal-js/arrow.png" alt="Up arrow" style="-webkit-transform: rotate(180deg);">
-						</a>
-					</section>
 				</section>
 
 				<section>
@@ -388,8 +366,8 @@ function linkify( selector ) {
 
 		</div>
 
-		<script src="//cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/lib/js/head.min.js"></script>
-		<script src="//cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/js/reveal.min.js"></script>
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/lib/js/head.min.js"></script>
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/js/reveal.min.js"></script>
 
 		<script>
 			Reveal.initialize({
@@ -409,18 +387,18 @@ function linkify( selector ) {
 
 				dependencies: [
 					{ 
-						src: '//cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/lib/js/classList.js', 
+						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/lib/js/classList.js', 
 						condition: function() { return !document.body.classList; } 
 					},
 					{
-						src: '//cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/markdown/marked.js', 
+						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/markdown/marked.js', 
 						condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
 					{ 
-						src: '//cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/markdown/markdown.js', 
+						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/markdown/markdown.js', 
 						condition: function() { return !!document.querySelector( '[data-markdown]' ); } 
 					},
 					{ 
-						src: '//cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/highlight/highlight.js', 
+						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/highlight/highlight.js', 
 						async: true, 
 						callback: function() { hljs.initHighlightingOnLoad(); } 
 					}
