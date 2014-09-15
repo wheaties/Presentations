@@ -41,11 +41,10 @@
 					<section>
 						<h2>What is a Dependent Type?</h2>
 						<div class="fragment">
-							<p>It's an abstract type parameter tied to a class or trait.</p>
 							<pre><code data-trim>
 trait DepValue{
-	type V
-	val value: V
+  type V
+  val value: V
 }
 
 def magic(that: DepValue): that.V = that.value
@@ -57,8 +56,8 @@ def magic(that: DepValue): that.V = that.value
 						<h4>Toy Example</h4>
 						<pre><code trim-data>
 def mk[T](x: T) = new DepValue{ 
-	type V = T
-	val value = x
+  type V = T
+  val value = x
 }
 val depInt = mk(1)
 val depString = mk("two")
@@ -68,12 +67,124 @@ val again: String = magic(depString)
 						</code></pre>
 					</section>
 					<section>
-						<h4>Examples in Scala Standard Library</p>
+						<h4>In the Standard Library</h4>
+						<pre><code trim-data>
+package scala.collection.generic
+
+trait IsTraversableOnce[Repr]{
+  type A
+  val conversion: Repr => GenTraversableOnce[A]
+}
+
+trait IsTraversableLike[Repr]{
+  type A
+  def conversion(repr: Repr): GenTraversableLike[A, Repr]
+}
+						</code></pre>
 					</section>
 				</section>
 
+				<section>
+					<section>
+						<h3>Start With Some Basics</h3>
+						<div class="fragment">
+							<p>The most basic dependent type in existence</p>
+							<pre><code trim-data>
+trait DepT{
+  type T
+}
+							</code></pre>
+							<p>...is also practically useless</p>
+						</div>
+					</section>
+					<section>
+						<h3>Make it More Useful</h3>
+						<pre><code trim-data>
+trait Inner[F]{
+  type T
+}
+						</code></pre>
+						<div class="fragment">
+							<pre><code trim-data>
+object Inner{
+  def apply[F](implicit inner: Inner[F]) = inner
+
+  implicit def mk[F[_], A] = new Inner[F[A]]{
+    type T = A
+  }
+}
+							</code></pre>
+						</div>
+					</section>
+					<section>
+						<h3>Now Make use of the Types</h3>
+						<pre><code trim-data>
+trait IsFuture[F]{
+  type T
+
+  def apply(f: F): Future[T]
+}
+
+object IsFuture{
+  def apply[F](implicit isf: IsFuture[F]) = isf
+
+  implicit def mk[A] = new IsFuture[Future[A]]{
+    type T = A
+
+    def apply(f: F): Future[A] = f
+  }
+}
+						</code></pre>
+						<p class="fragment">Who wants to guess how IsTraversableOnce was implemented?</p>
+					</section>
+					<section>
+						<h3>Use as an Implicit Guard</h3>
+						<pre><code trim-data>
+def logResult[Thing](thing: Thing)(implicit isf: IsFuture[Thing]): Future[isf.A] = 
+  isf(thing) map{ x =>
+    log info s"I got a result of $x"
+    x
+  }
+  						</code></pre>
+  						<p>Here, IsFuture witnesses that the type "Thing" is a Future and allows us to convert it to it's explicit and fully qualified type.</p>
+					</section>
+					<section>
+						<h4>Take Away</h4>
+						<ol>
+							<li>Use companion objects to hide implicit creation and any other boilerplate that might be needed to ultimately construct the dependently typed object.</li>
+							<li>Expose the constructed type classes using an apply that returns the implicit sought.</li>
+							<li>Dependent types can used as type parameters</li>
+							<li>Dependent types allow us to safely cross type boundaries.</li>
+						</ol>
+					</section>
+				</section>
 
 				<section>
+					<section>
+						<h3>One Step Further</h3>
+						<pre><code trim-data>
+trait Apart[F]{
+  type T
+  type W[X]
+
+  def apply(f: F): W[T]
+}
+						</code></pre>
+						<div class="fragment">
+							<pre><code trim-data>
+object Apart{
+  def apply[F](implicit apart: Apart[F]) = apart
+
+  implicit def mk[F[_], A] = new Apart[F[A]]{
+    type T = A
+    type W[X] = F[X]
+
+    def apply(f: F): W[T] = f
+  }
+}
+							</code></pre>
+						</div>
+					</section>
 				</section>
 
 				<section>
