@@ -370,7 +370,8 @@ assert(out == 0)
 				</section>
 
 				<section>
-					<section>Doing Something Useful</section>
+					<section>
+						<h3>Doing Something Useful</h3>
 						<p>Let's use types to guide the behavior of our application in a more direct manner. Who likes writing this?</p>
 						<pre><code trim-data>
 def annoy[A](that: Future[List[Set[Int]]], f: Int => A): Future[List[Set[A]]] =
@@ -405,13 +406,11 @@ object Mapper{
                                              f: Functor[F]) =
     new Mapper[F[A], B, C] {
       type Out = F[nested.Out]
-
       def apply(fa: F[A], g: B => C): Out = f.map(fa)(nested(_, g))
     }
   implicit def base[F[_], A, B >: A, C](implicit f: Functor[F]) =
     new Mapper[F[A], B, C]{
       type Out = F[C]
-
       def apply(fa: F[A], g: B => C) = f.map(fa)(g)
     }
 }
@@ -461,7 +460,7 @@ object Mapper{
 						<h3>Take Away</h3>
 						<ol>
 							<li>You can create the mother of all abstractions using dependent types.</li>
-							<li>Type inference can fail in spectacular ways.</li>
+							<li>Type inference can fail in spectacular ways, especially with dependent types.</li>
 							<li>Type refinement can help the compiler recapture "lost" type information.</li>
 						</ol>
 					</section>
@@ -470,7 +469,67 @@ object Mapper{
 				<section>
 					<section>
 						<h3>Proving Algorithmic/Structural Correctness</h3>
-						<p>If an algorithm or a structure that invariants, you can prove those invariants within the type system, i.e. if it compiles, it's correct!</p>
+						<ul>
+							<li>If an algorithm or a structure has invariants, you can prove those invariants within the type system, i.e. if it compiles, it's correct!</li>
+							<li>Works largely only at compilation time.</li>
+						</ul>
+					</section>
+					<section>
+						<h3>Balanced Tree</h3>
+						<p>A balanced tree where the left branch must be greater than or equal to right branch in height.</p>
+						<pre><code trim-data>
+import shapeless._
+
+sealed trait Tree[+T]{
+  type N <: Nat
+}
+object Leaf extends Tree[Nothing]{
+  type N = _0
+}
+trait Branch[T] extends Tree[T]{
+  def left: Tree[T]
+  def right: Tree[T]
+}
+						</code></pre>
+					</section>
+					<section>
+						<h3>Another Aside</h3>
+						<p>I'm cheating. I'm going to use Nat's from Shapeless. There's a few type classes/witnesses I get for free:</p>
+						<ol>
+							<li>Type level ordering: <i>LT[N,M]</i>, <i>LTEq[N,M</i>, <i>Min[N,M]</i>. </li>
+							<li>Type level operators: <i>Mult[N, M]</i>, <i>Div[N,M]</i>, <i>Sum[N,M]</i>, <i>Pow[N,M]</i>. </li>
+							<li>Type level difference (where left side > right) <i>Diff[N,M]</i>. </li>
+						</ol>
+					</section>
+					<section>
+						<h3>The Proof</h3>
+						<pre><code trim-data>
+object Branch {
+  type Aux[T, N0 <: Nat] = Branch[T] { type N = N0 }
+
+  def apply[T, D <: Nat](value: T, left0: Tree[T], right0: Tree[T])
+    (implicit diff: Diff.Aux[left0.N, right0.N, D],
+              lte: LTEq[D, _1]): Aux[T, Succ[left0.N]] =
+      new Branch[T] {
+        val left = left0
+        val right = right0
+        type N = Succ[left0.N]
+      }
+}
+						</code></pre>
+					</section>
+					<section>
+						<h3>Does it Work?</h3>
+						<pre><code trim-data>
+val b1 = Branch(1, Leaf, Leaf)
+val b2 = Branch(2, Leaf, Leaf)
+val higher = Branch(3, b1, Leaf)
+val higher2 = Branch(4, b2, b1)
+
+val nope = Branch(42, higher, Leaf) //won't compile
+val nadda = Branch(42, Leaf, b1) //won't do it either
+						</code></pre>
+						<p>Sure does!</p>
 					</section>
 				</section>
 
