@@ -266,12 +266,12 @@ zero(Foo(Foo(1))) //won't compile!
 					</section>
 					<section>
 						<h3>Recursive Structure? Recursive Algorithm</h3>
+						<p>Define another bland type like Inner but...</p>						
 						<pre><code trim-data>
 trait Unwrap[F]{
   type Inner
 }
 						</code></pre>
-						<p>Define another bland type like Inner but...</p>
 					</section><section>
 					<h3>Recurse Over the Types</h3>
 						<pre><code trim-data>
@@ -309,6 +309,40 @@ assert(out == 0)
 							<li>You can recurse at the type level.</li>
 							<li>When recursing over types, dependent types can be used to pass information from one level of recursion to the next.</li>
 						</ol>
+					</section>
+				</section>
+
+				<section>
+					<section>Doing Something Useful</section>
+						<p>Let's use types to guide the behavior of our application in a more direct manner.</p>
+						<pre><code trim-data>
+trait Mapper[A, B, C]{
+  type Out
+
+  def apply(a: A, f: B => C): Out
+}
+						</code></pre>
+					</section>
+					<section>
+						<pre><code trim-data>
+object Mapper{
+  def apply[A, B, C](implicit mapper: Mapper[A, B, C]) = mapper
+
+  implicit def recur[F[_], A, B, C](implicit nested: Mapper[A, B, C], 
+                                             f: Functor[F]): Mapper[F[A], B, C] =
+    new Mapper[F[A], B, C] {
+      type Out = F[nested.Out]
+
+      def apply(fa: F[A], g: B => C): Out = f.map(fa)(nested(_, g))
+    }
+  implicit def base[F[_], A, B >: A, C](implicit f: Functor[F]) =
+    new Mapper[F[A], B, C]{
+      type Out = F[C]
+
+      def apply(fa: F[A], g: B => C) = f.map(fa)(g)
+    }
+}
+						</code></pre>
 					</section>
 				</section>
 
