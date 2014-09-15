@@ -161,7 +161,7 @@ def logResult[Thing](thing: Thing)(implicit isf: IsFuture[Thing]): Future[isf.A]
 
 				<section>
 					<section>
-						<h3>One Step Further</h3>
+						<h3>Capturing More Than One Type</h3>
 						<pre><code trim-data>
 trait Apart[F]{
   type T
@@ -184,6 +184,69 @@ object Apart{
 }
 							</code></pre>
 						</div>
+					</section>
+					<section>
+						<h3>An Aside</h3>
+						<p>This is more than a type constructor</p>
+						<pre><code trim-data>type W[X]</code></pre>
+						<p>It is an equation.</p>
+						<div class="fragment">
+							<p>Valid declarations</p>
+							<pre><code trim-data>
+trait Demo[F[_]]{
+  type W[X] = F[X]
+  type Ignore[X] = F[Int]
+  type Identity[X] = X
+}
+							</code></pre>
+						</div>
+					</section>
+					<section>
+						<h3>Add a Type Refinement</h3>
+						<pre><code trim-data>
+object Apart{
+  def apply[F](implicit apart: Apart[F]) = apart
+
+  type Aux[FA, A, F[_]] = Apart[FA]{ type T = A; type W[X] = F[X] }
+
+  implicit def mk[F[_], A] = new Apart[F[A]]{
+    type T = A
+    type W[X] = F[X]
+
+    def apply(f: F): W[T] = f
+  }
+}
+						</code></pre>
+						<p>What does this give us?</p>
+					</section>
+					<section>
+						<h3>Dependent Type Capture</h3>
+						<div>
+							<pre><code trim-data>
+import scalaz._
+
+def mapZero[Thing, F[_], A](thing: Thing)(implicit apart: Apart.Aux[T, A, F], 
+                                                   f: Functor[F], 
+                                                   m: Monoid[A]): F[A] =
+  f(apart(thing))(_ => m.zero)
+							</code></pre>
+							<p>The Apart type class does not directly restrict the type of T.</p>
+						</div>
+						<div class="fragment">
+							<pre><code trim-data>
+def findZero[T, A](that: T)(implicit inner: Inner.Aux[T, A], 
+                                     m: Monoid[A]): inner.T = m.zero
+							</code></pre>
+							<p> Here inner.T and A are equivalent. The type A is not a free parameter.</p>
+						</div>
+					</section>
+					<section>
+						<h3>Take Away</h3>
+						<ol>
+							<li>You are not restricted to a single abstract type when using dependent types.</li>
+							<li>Type refinements can be used as a mechanism to capture the depedent types within the same implicit declaration.</li>
+							<li>Captured types can be used by <i>other</i> type classes to place restrictions on the types.</li>
+						</ol>
 					</section>
 				</section>
 
