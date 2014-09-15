@@ -155,6 +155,7 @@ def logResult[Thing](thing: Thing)(implicit isf: IsFuture[Thing]): Future[isf.A]
 							<li>Expose the constructed type classes using an apply that returns the implicit sought.</li>
 							<li>Dependent types can used as type parameters</li>
 							<li>Dependent types allow us to safely cross type boundaries.</li>
+							<li>You get one "free" type parameter.</li>
 						</ol>
 					</section>
 				</section>
@@ -197,6 +198,7 @@ trait Demo[F[_]]{
   type W[X] = F[X]
   type Ignore[X] = F[Int]
   type Identity[X] = X
+  type Const[X] = Int
 }
 							</code></pre>
 						</div>
@@ -245,7 +247,7 @@ def findZero[T, A](that: T)(implicit inner: Inner.Aux[T, A],
 						<ol>
 							<li>You are not restricted to a single abstract type when using dependent types.</li>
 							<li>Type refinements can be used as a mechanism to capture the depedent types within the same implicit declaration.</li>
-							<li>Captured types can be used by <i>other</i> type classes to place restrictions on the types.</li>
+							<li>Captured types can be used by <i>other</i> type classes to place restrictions on related types.</li>
 						</ol>
 					</section>
 				</section>
@@ -362,7 +364,7 @@ assert(out == 0)
 						<h3>Take Away</h3>
 						<ol>
 							<li>You can recurse at the type level.</li>
-							<li>Dependent types can be used to pass type information from around when solving for types.</li>
+							<li>Dependent types can be used to pass type information around when solving for types.</li>
 						</ol>
 					</section>
 				</section>
@@ -400,7 +402,7 @@ object Mapper{
   def apply[A, B, C](implicit mapper: Mapper[A, B, C]) = mapper
 
   implicit def recur[F[_], A, B, C](implicit nested: Mapper[A, B, C], 
-                                             f: Functor[F]): Mapper[F[A], B, C] =
+                                             f: Functor[F]) =
     new Mapper[F[A], B, C] {
       type Out = F[nested.Out]
 
@@ -414,6 +416,61 @@ object Mapper{
     }
 }
 						</code></pre>
+					</section>
+					<section>
+						<h3>It Works!</h3>
+						<pre><code trim-data>
+val in = List(List(1))
+val out = MapIt(in, {x: Int => x+1})
+
+assert(List(List(2)) == out)
+						</code></pre>
+					</section>
+					<section>
+						<h3>It Works?</h3>
+						<p>Scalac, you're a source of fun and assumement. Let's compile this:</p>
+						<pre><code trim-data>
+def tiden[T](t: T): T = t
+
+tiden[List[List[Int]]](out)
+						</code></pre>
+						<div class="fragment">
+							<pre>
+type mismatch;
+
+found: Mapper[List[List[Int]], Int, Int]#Out
+required: List[List[Int]]
+							</pre>
+						</div>
+					</section>
+					<section>
+						<h3>More Types to the Rescue</h3>
+						<pre><code trim-data>
+object Mapper{
+  type Aux[A, B, C, Out0] = Mapper[A, B, C]{ type Out = Out0 }
+
+  implicit def recur[F[_], A, B, C]
+    (implicit nested: Mapper[A, B, C], f: Functor[F]): Aux[F[A], B, C, F[nested.Out]] =
+
+  implicit def base[F[_], A, B >: A, C]
+    (implicit f: Functor[F]): Aux[F[A], B, C, F[C]] =
+}
+						</code></pre>
+					</section>
+					<section>
+						<h3>Take Away</h3>
+						<ol>
+							<li>You can create the mother of all abstractions using dependent types.</li>
+							<li>Type inference can fail in spectacular ways.</li>
+							<li>Type refinement can help the compiler recapture "lost" type information.</li>
+						</ol>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h3>Proving Algorithmic/Structural Correctness</h3>
+						<p>If an algorithm or a structure that invariants, you can prove those invariants within the type system, i.e. if it compiles, it's correct!</p>
 					</section>
 				</section>
 
