@@ -252,6 +252,62 @@ def findZero[T, A](that: T)(implicit inner: Inner.Aux[T, A],
 
 				<section>
 					<section>
+						<h3>Changing Behavior</h3>
+						<p>Getting types is useful. Changing behavior due to types, that's really useful.</p>
+						<pre><code trim-data>
+object ApplyEither{
+  def apply[T, F, G](t: T, f: F, g: G)
+    (implicit ea: EApply[T, F, G]): ea.Out = ea(t, f, g)
+}
+
+trait EApply[T, F, G]{
+  type Out
+
+  def apply(t: T, f: F, g: G): Out
+}
+						</code></pre>
+					</section>
+					<section>
+						<h3>Define EApply Creation</h3>
+						<pre><code trim-data>
+object EApply extends LowPriorityEApply{
+  def apply[T, F, G](implicit ea: EApply[T, F, G]) = ea
+
+  implicit def fapply[T, R, G] = new EApply[T, T => R, G] {
+      type Out = R
+      def apply(t: T, f: T => R, g: G) = f(t)
+    }
+}
+trait LowPriorityEApply{
+  implicit def gapply[T, R, F] = new EApply[T, F, T => R] {
+      type Out = R
+      def apply(t: T, f: F, g: T => R) = g(t)
+    }
+}
+						</code></pre>
+					</section>
+					<section>
+						<h3>How it Works</h3>
+						<pre><code trim-data>
+val out = ApplyEither(1, {x: Int => 42}, {x: Double => "no"})
+assert(out == 42)
+
+val out2 = ApplyEither(2.0, {x: Int => 42}, {x: Double => "no"})
+assert(out2 == "no")
+						</code></pre>
+						<p>The EApply trait acts as a compile time switch or case statement.</p>
+					</section>
+					<section>
+						<h3>Take Away</h3>
+						<ol>
+							<li>Use implicit resolution order to avoid implicit ambiguity.</li>
+							<li>Type level pattern matching can take advantage of implicit resolution order.</li>
+						</ol>
+					</section>
+				</section>
+
+				<section>
+					<section>
 						<h3>Walking the Type Structure</h3>
 						<p>Limitations on Inner and Apart?</p>
 						<pre><code trim-data>
@@ -305,17 +361,32 @@ assert(out == 0)
 					<section>
 						<h3>Take Away</h3>
 						<ol>
-							<li>Use implicit resolution order to avoid implicit ambiguity.</li>
 							<li>You can recurse at the type level.</li>
-							<li>When recursing over types, dependent types can be used to pass information from one level of recursion to the next.</li>
+							<li>Dependent types can be used to pass type information from around when solving for types.</li>
 						</ol>
 					</section>
 				</section>
 
 				<section>
 					<section>Doing Something Useful</section>
-						<p>Let's use types to guide the behavior of our application in a more direct manner.</p>
+						<p>Let's use types to guide the behavior of our application in a more direct manner. Who likes writing this?</p>
 						<pre><code trim-data>
+def annoy[A](that: Future[List[Set[Int]]], f: Int => A): Future[List[Set[A]]] =
+  that map{ 
+    _ map{
+      _ map f
+  }
+}
+						</code></pre>
+					</section>
+					<section>
+						<h3>Abstract the Pain</h3>
+						<pre><code trim-data>
+object MapIt{
+  def apply[A, B, C](in: A, f: B => C)
+    (implicit mapper: Mapper[A, B, C]): mapper.Out =
+      mapper(in, f)
+}
 trait Mapper[A, B, C]{
   type Out
 
