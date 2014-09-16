@@ -135,7 +135,7 @@ object IsFuture{
   }
 }
 						</code></pre>
-						<p class="fragment">Who wants to guess how IsTraversableOnce was implemented?</p>
+						<p class="fragment">Think about how IsTraversableOnce was implemented?</p>
 					</section>
 					<section>
 						<h3>Use as an Implicit Guard</h3>
@@ -204,7 +204,7 @@ trait Demo[F[_]]{
 						</div>
 					</section>
 					<section>
-						<h3>Add a Type Refinement</h3>
+						<h3>Type Refinements</h3>
 						<pre><code trim-data>
 object Apart{
   def apply[F](implicit apart: Apart[F]) = apart
@@ -289,7 +289,7 @@ trait LowPriorityEApply{
 						</code></pre>
 					</section>
 					<section>
-						<h3>How it Works</h3>
+						<h3>In Action</h3>
 						<pre><code trim-data>
 val out = ApplyEither(1, {x: Int => 42}, {x: Double => "no"})
 assert(out == 42)
@@ -323,15 +323,17 @@ zero(Foo(Foo(1))) //won't compile!
 						<p>It only ever goes one level deep.</p>
 					</section>
 					<section>
-						<h3>Recursive Structure? Recursive Algorithm</h3>
-						<p>Define another bland type like Inner but...</p>						
+						<h3>Recursive Structure?</h3>
+						<p>Define another bland type like Inner</p>						
 						<pre><code trim-data>
 trait Unwrap[F]{
   type Inner
 }
 						</code></pre>
-					</section><section>
-					<h3>Recurse Over the Types</h3>
+						<p>but...</p>
+					</section>
+					<section>
+						<h3>Recurse Over the Types</h3>
 						<pre><code trim-data>
 object Unwrap extends LowPriorityUnwrap{
   def apply[F](implicit unwrap: Unwrap[F]) = unwrap
@@ -362,10 +364,7 @@ assert(out == 0)
 					</section>
 					<section>
 						<h3>Take Away</h3>
-						<ol>
-							<li>You can recurse at the type level.</li>
-							<li>Dependent types can be used to pass type information around when solving for types.</li>
-						</ol>
+						<p>Dependent types can be used to pass type information around when solving for types.</p>
 					</section>
 				</section>
 
@@ -383,7 +382,7 @@ def annoy[A](that: Future[List[Set[Int]]], f: Int => A): Future[List[Set[A]]] =
 						</code></pre>
 					</section>
 					<section>
-						<h3>Abstract the Pain</h3>
+						<h3>Define a Nested Mapper</h3>
 						<pre><code trim-data>
 object MapIt{
   def apply[A, B, C](in: A, f: B => C)
@@ -398,6 +397,7 @@ trait Mapper[A, B, C]{
 						</code></pre>
 					</section>
 					<section>
+						<h3>Define the Type Recursive Algorithm</h3>
 						<pre><code trim-data>
 object Mapper{
   def apply[A, B, C](implicit mapper: Mapper[A, B, C]) = mapper
@@ -417,7 +417,7 @@ object Mapper{
 						</code></pre>
 					</section>
 					<section>
-						<h3>It Works!</h3>
+						<h3>It Works! Right?</h3>
 						<pre><code trim-data>
 val in = List(List(1))
 val out = MapIt(in, {x: Int => x+1})
@@ -426,14 +426,13 @@ assert(List(List(2)) == out)
 						</code></pre>
 					</section>
 					<section>
-						<h3>It Works?</h3>
-						<p>Scalac, you're a source of fun and assumement. Let's compile this:</p>
+						<h3>Or Does It?</h3>
+						<p>Equality doesn't test the type. Be more type specific and compile this:</p>
 						<pre><code trim-data>
-def tiden[T](t: T): T = t
-
-tiden[List[List[Int]]](out)
+identity[List[List[Int]]](out)
 						</code></pre>
 						<div class="fragment">
+							<p>Scalac, you're a source of fun and assumement.</p>
 							<pre>
 type mismatch;
 
@@ -449,7 +448,8 @@ object Mapper{
   type Aux[A, B, C, Out0] = Mapper[A, B, C]{ type Out = Out0 }
 
   implicit def recur[F[_], A, B, C]
-    (implicit nested: Mapper[A, B, C], f: Functor[F]): Aux[F[A], B, C, F[nested.Out]] =
+    (implicit nested: Mapper[A, B, C], 
+              f: Functor[F]): Aux[F[A], B, C, F[nested.Out]] =
 
   implicit def base[F[_], A, B >: A, C]
     (implicit f: Functor[F]): Aux[F[A], B, C, F[C]] =
@@ -470,8 +470,8 @@ object Mapper{
 					<section>
 						<h3>Proving Algorithmic/Structural Correctness</h3>
 						<ul>
-							<li>If an algorithm or a structure has invariants, you can prove those invariants within the type system, i.e. if it compiles, it's correct!</li>
-							<li>Works largely only at compilation time.</li>
+							<p>If an algorithm or a structure has invariants, you can prove those invariants within the type system, i.e. if it compiles, it's correct!</p>
+							<p>But... It works largely only at compilation time.</p>
 						</ul>
 					</section>
 					<section>
@@ -496,9 +496,9 @@ trait Branch[T] extends Tree[T]{
 						<h3>Another Aside</h3>
 						<p>I'm cheating. I'm going to use Nat's from Shapeless. There's a few type classes/witnesses I get for free:</p>
 						<ol>
-							<li>Type level ordering: <i>LT[N,M]</i>, <i>LTEq[N,M</i>, <i>Min[N,M]</i>. </li>
-							<li>Type level operators: <i>Mult[N, M]</i>, <i>Div[N,M]</i>, <i>Sum[N,M]</i>, <i>Pow[N,M]</i>. </li>
-							<li>Type level difference (where left side > right) <i>Diff[N,M]</i>. </li>
+							<li>Type level ordering: <code>LT[N,M]</code> and <code>LTEq[N,M]</code>. </li>
+							<li>Type level operators: <code>Mult[N, M]</code>, <code>Div[N,M]</code>, <code>Sum[N,M]</code>, <code>Pow[N,M]</code> and <code>Min[N,M]</code>. </li>
+							<li>Type level difference (where left Nat >= right Nat) <code>Diff[N,M]</code>. </li>
 						</ol>
 					</section>
 					<section>
@@ -531,10 +531,102 @@ val nadda = Branch(42, Leaf, b1) //won't do it either
 						</code></pre>
 						<p>Sure does!</p>
 					</section>
+					<section>
+						<h3>Take Away</h3>
+						<ol>
+							<li>Any algorithm or data structure that makes use of this can be made proveably correct. If it compiles, it must work.</li>
+							<li>The proof is, in general, a function of how you define and use it.</li>
+						</ol>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h3>Less Restrictive Proofs</h3>
+						<p>Always making the left hand side of the tree be greater than or equal to the right hand tree is a tough restriction to work within.</p>
+					</section>
+					<section>
+						<h3>Removing the Left Hand Invariant</h3>
+						<p>Ideally we'd want something that looks like this</p>
+						<pre><code trim-data>
+object Balanced{
+  def apply[T, D <: Nat](value: T, left0: Tree[T], right0: Tree[T])
+    (implicit diff: Diff.Aux[left0.N, right0.N, D],
+              lte: LTEq[D, _1]): Aux[T, Succ[left0.N]] =
+
+  def apply[T, D <: Nat](value: T, left0: Tree[T], right0: Tree[T])
+    (implicit diff: Diff.Aux[right0.N, left0.N, D],
+              lte: LTEq[D, _1]): Aux[T, Succ[right0.N]] =
+}
+						</code></pre>
+						<p>This won't compile.</p>
+					</section>
+					<section>
+						<h3>Take 2</h3>
+						<pre><code trim-data>
+object Balanced extends LowPriortyBalanced{
+  def apply[T, D <: Nat](value: T, left0: Tree[T], right0: Tree[T])
+    (implicit diff: Diff.Aux[left0.N, right0.N, D],
+              lte: LTEq[D, _1]): Aux[T, Succ[left0.N]] =
+}
+trait LowPriorityBalanced{
+  def apply[T, D <: Nat](value: T, left0: Tree[T], right0: Tree[T])
+    (implicit diff: Diff.Aux[right0.N, left0.N, D],
+              lte: LTEq[D, _1]): Aux[T, Succ[right0.N]] =
+}
+						</code></pre>
+						<p>Compiles but doesn't work.</p>
+					</section>
+					<section>
+						<h3>Use a Secondary Implicit</h3>
+						<pre><code trim-data>
+object Balanced{
+  def apply[T](value: T, left0: Tree[T], right0: Tree[T])
+    (implicit tb: TreeBuilder[T, left0.N, right0.N]): Branch.Aux[T, builder.Size] = 
+      tb(value, left0, right0)
+
+  trait TreeBuilder[T, N <: Nat, M <: Nat]{
+    type Size <: Nat
+    def apply(v: T, l: Tree[T], r: Tree[T]): Tree[T, Size]
+  }
+
+  object TreeBuilder{
+    def apply[T, N <: Nat, M <: Nat](implicit tb: TreeBuilder[T, N, M]) = tb
+  }
+}
+						</code></pre>
+					</section>
+					<section>
+						<h3>Define TreeBuilder</h3>
+						<pre><code trim-data>
+						</code></pre>
+					</section>
+					<section>
+						<h3>And The Right Hand Side</h3>
+						<pre><code trim-data>
+						</code></pre>
+					</section>
+					<section>
+						<h3>Does it Work?</h3>
+						<pre><code trim-data>
+val one = Balanced(1, Leaf, Leaf)
+val two = Balanced(2, Leaf, one)
+
+identity[Branch.Aux[Int,_2]](two)
+						</code></pre>
+						<p>Yup!</p>
+					</section>
+					<section>
+						<h3>Take Away</h3>
+						<ol>
+							<li>Multiple valid conditions sometimes require the use of a secondary witness/type class.</li>
+							<li>The same structure can be used in multiple situations and with different invariants. Be careful.</li>
+							<li>Sometimes the type refinement has to be recursively defined by the type that has paradoxically been "lost."</li>
+						</ol>
+					</section>
 				</section>
 
 				<section>
-					<h1>Questions?</h1>
+					<h1>Questions?</h1>					
 				</section>
 
 			</div>
