@@ -600,9 +600,12 @@ object Balanced{
 						<pre><code trim-data>
 object TreeBuilder extends LowPrioryBuilder{
   def apply[T, N <: Nat, M <: Nat]
-    (implicit tb: TreeBuilder[T, N, M]): Aux[T, N, M, tb.Out] = tb
+    (implicit tb: TreeBuilder[T, N, M]): Aux[T, N, M, tb.Size] = tb
 
-  type Aux[T, N <: Nat, M <: Nat, Size0 <: Nat] = TreeBuilder[T, N, M] {type Size = Size0}
+  type Aux[T, N <: Nat, M <: Nat, Size0 <: Nat] = 
+    TreeBuilder[T, N, M] {type Size = Size0}
+
+  //object continues on next slide...
 						</code></pre>
 						</section>
 						<section>
