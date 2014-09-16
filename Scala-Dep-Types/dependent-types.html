@@ -598,11 +598,45 @@ object Balanced{
 					<section>
 						<h3>Define TreeBuilder</h3>
 						<pre><code trim-data>
+object TreeBuilder extends LowPrioryBuilder{
+  def apply[T, N <: Nat, M <: Nat]
+    (implicit tb: TreeBuilder[T, N, M]): Aux[T, N, M, tb.Out] = tb
+
+  type Aux[T, N <: Nat, M <: Nat, Size0 <: Nat] = TreeBuilder[T, N, M] {type Size = Size0}
+
+  implicit def mkLeft[T, N0 <: Nat, M <: Nat, D <: Nat]
+    (implicit diff: Diff.Aux[N0, M, D], 
+              lte: LTEq[D, _1]): Aux[T, N0, M, Succ[N0]] =
+      new TreeBuilder[T, N0, M] {
+        type Size = Succ[N0]
+        def apply(value: T, left0: Tree[T], right0: Tree[T]) =
+          new Branch[T] {
+            val left = left0
+            val right = right0
+            type N = Succ[N0]
+          }
+      }
+}
 						</code></pre>
 					</section>
 					<section>
 						<h3>And The Right Hand Side</h3>
 						<pre><code trim-data>
+trait LowPrioryBalance{
+  implicit def mkRight[T, N0 <: Nat, M <: Nat, D <: Nat]
+    (implicit diff: Diff.Aux[M, N0, D], 
+              lte: LTEq[D, _1]): TreeBuilder.Aux[T, N0, M, Succ[M]] =
+      new TreeBuilder[T, N0, M] {
+        type Size = Succ[M]
+
+        def apply(value: T, left0: Tree[T], right0: Tree[T]) =
+          new Branch[T] {
+            val left = left0
+            val right = right0
+            type N = Succ[M]
+          }
+    }
+}
 						</code></pre>
 					</section>
 					<section>
