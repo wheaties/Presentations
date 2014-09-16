@@ -603,7 +603,11 @@ object TreeBuilder extends LowPrioryBuilder{
     (implicit tb: TreeBuilder[T, N, M]): Aux[T, N, M, tb.Out] = tb
 
   type Aux[T, N <: Nat, M <: Nat, Size0 <: Nat] = TreeBuilder[T, N, M] {type Size = Size0}
-
+						</code></pre>
+						</section>
+						<section>
+							<h3>Define the Left Hand Side</h3>
+							<pre><code trim-data>
   implicit def mkLeft[T, N0 <: Nat, M <: Nat, D <: Nat]
     (implicit diff: Diff.Aux[N0, M, D], 
               lte: LTEq[D, _1]): Aux[T, N0, M, Succ[N0]] =
