@@ -127,7 +127,7 @@ object IsFuture{
 					<section>
 						<h3>Use as an Implicit Guard</h3>
 						<pre><code trim-data>
-def logResult[Thing](thing: Thing)(implicit isf: IsFuture[Thing]): Future[isf.A] = 
+def logResult[Thing](thing: Thing)(implicit isf: IsFuture[Thing]): Future[isf.T] = 
   isf(thing) map{ x =>
     log info s"I got a result of $x"
     x
@@ -219,16 +219,10 @@ import scalaz._
 def mapZero[Thing, F[_], A](thing: Thing)(implicit apart: Apart.Aux[Thing, A, F], 
                                                    f: Functor[F], 
                                                    m: Monoid[A]): F[A] =
-  f(apart(thing))(_ => m.zero)
+  f.map(apart(thing))(_ => m.zero)
 							</code></pre>
 							<p>The Apart type class does not directly restrict the type of T.</p>
-						</div>
-						<div class="fragment">
-							<pre><code trim-data>
-def findZero[T, A](that: T)(implicit inner: Inner.Aux[T, A], 
-                                     m: Monoid[A]): inner.T = m.zero
-							</code></pre>
-							<p> Here inner.T and A are equivalent. The type A is not a free parameter.</p>
+							<p>There are more than 2 type parameters, too.</p>
 						</div>
 					</section>
 					<!--
@@ -381,8 +375,7 @@ def annoy[A](that: Future[List[Set[Int]]], f: Int => A): Future[List[Set[A]]] =
 						<pre><code trim-data>
 object MapIt{
   def apply[A, B, C](in: A, f: B => C)
-    (implicit mapper: Mapper[A, B, C]): mapper.Out =
-      mapper(in, f)
+    (implicit mapper: Mapper[A, B, C]): mapper.Out = mapper(in, f)
 }
 trait Mapper[A, B, C]{
   type Out
