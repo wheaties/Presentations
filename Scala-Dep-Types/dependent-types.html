@@ -86,19 +86,7 @@ trait IsTraversableLike[Repr]{
 
 				<section>
 					<section>
-						<h3>Start With Some Basics</h3>
-						<div class="fragment">
-							<p>The most basic dependent type in existence</p>
-							<pre><code trim-data>
-trait DepT{
-  type T
-}
-							</code></pre>
-							<p>...is also practically useless</p>
-						</div>
-					</section>
-					<section>
-						<h3>Make it More Useful</h3>
+						<h3>Build a Type Extractor</h3>
 						<pre><code trim-data>
 trait Inner[F]{
   type T
@@ -135,12 +123,11 @@ object IsFuture{
   }
 }
 						</code></pre>
-						<p class="fragment">Think about how IsTraversableOnce was implemented?</p>
 					</section>
 					<section>
 						<h3>Use as an Implicit Guard</h3>
 						<pre><code trim-data>
-def logResult[Thing](thing: Thing)(implicit isf: IsFuture[Thing]): Future[isf.A] = 
+def logResult[Thing](thing: Thing)(implicit isf: IsFuture[Thing]): Future[isf.T] = 
   isf(thing) map{ x =>
     log info s"I got a result of $x"
     x
@@ -148,6 +135,7 @@ def logResult[Thing](thing: Thing)(implicit isf: IsFuture[Thing]): Future[isf.A]
   						</code></pre>
   						<p>Here, IsFuture witnesses that the type "Thing" is a Future and allows us to convert it to it's explicit and fully qualified type.</p>
 					</section>
+					<!--
 					<section>
 						<h4>Take Away</h4>
 						<ol>
@@ -158,6 +146,7 @@ def logResult[Thing](thing: Thing)(implicit isf: IsFuture[Thing]): Future[isf.A]
 							<li>You get one "free" type parameter.</li>
 						</ol>
 					</section>
+				-->
 				</section>
 
 				<section>
@@ -227,21 +216,16 @@ object Apart{
 							<pre><code trim-data>
 import scalaz._
 
-def mapZero[Thing, F[_], A](thing: Thing)(implicit apart: Apart.Aux[T, A, F], 
+def mapZero[Thing, F[_], A](thing: Thing)(implicit apart: Apart.Aux[Thing, A, F], 
                                                    f: Functor[F], 
                                                    m: Monoid[A]): F[A] =
-  f(apart(thing))(_ => m.zero)
+  f.map(apart(thing))(_ => m.zero)
 							</code></pre>
 							<p>The Apart type class does not directly restrict the type of T.</p>
-						</div>
-						<div class="fragment">
-							<pre><code trim-data>
-def findZero[T, A](that: T)(implicit inner: Inner.Aux[T, A], 
-                                     m: Monoid[A]): inner.T = m.zero
-							</code></pre>
-							<p> Here inner.T and A are equivalent. The type A is not a free parameter.</p>
+							<p>There are more than 2 type parameters, too.</p>
 						</div>
 					</section>
+					<!--
 					<section>
 						<h3>Take Away</h3>
 						<ol>
@@ -250,6 +234,7 @@ def findZero[T, A](that: T)(implicit inner: Inner.Aux[T, A],
 							<li>Captured types can be used by <i>other</i> type classes to place restrictions on related types.</li>
 						</ol>
 					</section>
+				-->
 				</section>
 
 				<section>
@@ -299,6 +284,7 @@ assert(out2 == "no")
 						</code></pre>
 						<p>The EApply trait acts as a compile time switch or case statement.</p>
 					</section>
+					<!--
 					<section>
 						<h3>Take Away</h3>
 						<ol>
@@ -306,6 +292,7 @@ assert(out2 == "no")
 							<li>Type level pattern matching can take advantage of implicit resolution order.</li>
 						</ol>
 					</section>
+				-->
 				</section>
 
 				<section>
@@ -339,7 +326,7 @@ object Unwrap extends LowPriorityUnwrap{
   def apply[F](implicit unwrap: Unwrap[F]) = unwrap
 
   implicit def neseted[F[_], G](implicit unwrap: Unwrap[G]) =
-    new Unwrap[F]{
+    new Unwrap[F[G]]{
       type Inner = unwrap.Inner
     }
 }
@@ -362,10 +349,12 @@ assert(out == 0)
 						</code></pre>
 						<p>This compiles and now can access the inner type parameter of the nested Foo, Int.</p>
 					</section>
+					<!--
 					<section>
 						<h3>Take Away</h3>
 						<p>Dependent types can be used to pass type information around when solving for types.</p>
 					</section>
+				-->
 				</section>
 
 				<section>
@@ -386,8 +375,7 @@ def annoy[A](that: Future[List[Set[Int]]], f: Int => A): Future[List[Set[A]]] =
 						<pre><code trim-data>
 object MapIt{
   def apply[A, B, C](in: A, f: B => C)
-    (implicit mapper: Mapper[A, B, C]): mapper.Out =
-      mapper(in, f)
+    (implicit mapper: Mapper[A, B, C]): mapper.Out = mapper(in, f)
 }
 trait Mapper[A, B, C]{
   type Out
@@ -417,28 +405,22 @@ object Mapper{
 						</code></pre>
 					</section>
 					<section>
-						<h3>It Works! Right?</h3>
+						<h3>It Works!</h3>
 						<pre><code trim-data>
 val in = List(List(1))
 val out = MapIt(in, {x: Int => x+1})
 
 assert(List(List(2)) == out)
 						</code></pre>
-					</section>
-					<section>
-						<h3>Or Does It?</h3>
-						<p>Equality doesn't test the type. Be more type specific and compile this:</p>
-						<pre><code trim-data>
-identity[List[List[Int]]](out)
-						</code></pre>
 						<div class="fragment">
-							<p>Scalac, you're a source of fun and assumement.</p>
-							<pre>
+							<p>but equality doesn't test types...</p>
+							<pre><code trim-data>
+scala> identity[List[List[Int]]](out)
 type mismatch;
 
 found: Mapper[List[List[Int]], Int, Int]#Out
 required: List[List[Int]]
-							</pre>
+							</code></pre>
 						</div>
 					</section>
 					<section>
@@ -456,6 +438,7 @@ object Mapper{
 }
 						</code></pre>
 					</section>
+					<!--
 					<section>
 						<h3>Take Away</h3>
 						<ol>
@@ -464,6 +447,7 @@ object Mapper{
 							<li>Type refinement can help the compiler recapture "lost" type information.</li>
 						</ol>
 					</section>
+				-->
 				</section>
 
 				<section>
@@ -471,7 +455,6 @@ object Mapper{
 						<h3>Proving Algorithmic/Structural Correctness</h3>
 						<ul>
 							<p>If an algorithm or a structure has invariants, you can prove those invariants within the type system, i.e. if it compiles, it's correct!</p>
-							<p>But... It works largely only at compilation time.</p>
 						</ul>
 					</section>
 					<section>
@@ -531,6 +514,7 @@ val nadda = Branch(42, Leaf, b1) //won't do it either
 						</code></pre>
 						<p>Sure does!</p>
 					</section>
+					<!--
 					<section>
 						<h3>Take Away</h3>
 						<ol>
@@ -538,6 +522,7 @@ val nadda = Branch(42, Leaf, b1) //won't do it either
 							<li>The proof is, in general, a function of how you define and use it.</li>
 						</ol>
 					</section>
+				-->
 				</section>
 				<section>
 					<section>
@@ -656,6 +641,7 @@ identity[Branch.Aux[Int,_2]](two)
 						</code></pre>
 						<p>Yup!</p>
 					</section>
+					<!--
 					<section>
 						<h3>Take Away</h3>
 						<ol>
@@ -664,6 +650,7 @@ identity[Branch.Aux[Int,_2]](two)
 							<li>Sometimes the type refinement has to be recursively defined by the type that has paradoxically been "lost."</li>
 						</ol>
 					</section>
+				-->
 				</section>
 
 				<section>
