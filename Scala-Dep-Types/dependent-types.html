@@ -67,6 +67,22 @@ val again: String = magic(depString)
 						</code></pre>
 					</section>
 					<section>
+						<h4>Other Forms</h4>
+						<pre><code trim-data>
+trait Foo{
+	class Bar
+	def doNothing(b: Bar){}
+}
+val f1 = new Foo{}
+val b1 = new f1.Bar()
+val f2 = new Foo{}
+val b2 = new f2.Bar()
+
+f1.doNothing(b1) //fine
+f1.doNothing(b2) //won't compiless
+						</code></pre>
+					</section>
+					<section>
 						<h4>In the Standard Library</h4>
 						<pre><code trim-data>
 package scala.collection.generic
@@ -135,7 +151,6 @@ def logResult[Thing](thing: Thing)(implicit isf: IsFuture[Thing]): Future[isf.T]
   						</code></pre>
   						<p>Here, IsFuture witnesses that the type "Thing" is a Future and allows us to convert it to it's explicit and fully qualified type.</p>
 					</section>
-					<!--
 					<section>
 						<h4>Take Away</h4>
 						<ol>
@@ -143,10 +158,8 @@ def logResult[Thing](thing: Thing)(implicit isf: IsFuture[Thing]): Future[isf.T]
 							<li>Expose the constructed type classes using an apply that returns the implicit sought.</li>
 							<li>Dependent types can used as type parameters</li>
 							<li>Dependent types allow us to safely cross type boundaries.</li>
-							<li>You get one "free" type parameter.</li>
 						</ol>
 					</section>
-				-->
 				</section>
 
 				<section>
@@ -221,26 +234,34 @@ def mapZero[Thing, F[_], A](thing: Thing)(implicit apart: Apart.Aux[Thing, A, F]
                                                    m: Monoid[A]): F[A] =
   f.map(apart(thing))(_ => m.zero)
 							</code></pre>
-							<p>The Apart type class does not directly restrict the type of T.</p>
-							<p>There are more than 2 type parameters, too.</p>
 						</div>
 					</section>
-					<!--
 					<section>
 						<h3>Take Away</h3>
 						<ol>
 							<li>You are not restricted to a single abstract type when using dependent types.</li>
 							<li>Type refinements can be used as a mechanism to capture the depedent types within the same implicit declaration.</li>
-							<li>Captured types can be used by <i>other</i> type classes to place restrictions on related types.</li>
+							<li>Captured types do not count as a "free" type parameter.</li>
+							<li>Captured types can be used by <i>other</i> type classes to place constraints on types</li>
 						</ol>
 					</section>
-				-->
 				</section>
 
 				<section>
 					<section>
-						<h3>Changing Behavior</h3>
-						<p>Getting types is useful. Changing behavior due to types, that's really useful.</p>
+						<h3>Type Level Pattern Matching</h3>
+						<p>Like a compile time "orElse."</p>
+						<pre><code trim-data>
+val out = ApplyEither(1, {x: Int => 42}, {x: Double => "no"})
+assert(out == 42)
+
+val out2 = ApplyEither(2.0, {x: Int => 42}, {x: Double => "no"})
+assert(out2 == "no")
+						</code></pre>
+						<p>At compilation time, the function that compiles is the function that is chosen.</p>
+					</section>
+					<section>
+						<h3>The Set Up</h3>
 						<pre><code trim-data>
 object ApplyEither{
   def apply[T, F, G](t: T, f: F, g: G)
@@ -274,25 +295,12 @@ trait LowPriorityEApply{
 						</code></pre>
 					</section>
 					<section>
-						<h3>In Action</h3>
-						<pre><code trim-data>
-val out = ApplyEither(1, {x: Int => 42}, {x: Double => "no"})
-assert(out == 42)
-
-val out2 = ApplyEither(2.0, {x: Int => 42}, {x: Double => "no"})
-assert(out2 == "no")
-						</code></pre>
-						<p>The EApply trait acts as a compile time switch or case statement.</p>
-					</section>
-					<!--
-					<section>
 						<h3>Take Away</h3>
 						<ol>
 							<li>Use implicit resolution order to avoid implicit ambiguity.</li>
-							<li>Type level pattern matching can take advantage of implicit resolution order.</li>
+							<li>Acts as a type level "if" statement.</p>
 						</ol>
 					</section>
-				-->
 				</section>
 
 				<section>
@@ -307,11 +315,11 @@ def zero[T, A](t: T)(implicit inner: Inner.Aux[T, A],
 
 zero(Foo(Foo(1))) //won't compile!
 						</code></pre>
-						<p>It only ever goes one level deep.</p>
+						<p>Neither goes deeper than the first type constructor.</p>
 					</section>
 					<section>
 						<h3>Recursive Structure?</h3>
-						<p>Define another bland type like Inner</p>						
+						<p>Define another bland type like Inner</p>
 						<pre><code trim-data>
 trait Unwrap[F]{
   type Inner
@@ -341,7 +349,7 @@ trait LowPriorityUnwrap{
 					<section>
 						<h3>Take Two</h3>
 						<pre><code trim-data>
-def zero[T, A](t: T)(implicit inner: Inner.Aux[T, A], 
+def zero[T, A](t: T)(implicit unwrap: Unwrap.Aux[T, A], 
                               m: Monoid[A]): inner.T = m.zero
 
 val out = zero(Foo(Foo(1)))
@@ -349,12 +357,12 @@ assert(out == 0)
 						</code></pre>
 						<p>This compiles and now can access the inner type parameter of the nested Foo, Int.</p>
 					</section>
-					<!--
 					<section>
 						<h3>Take Away</h3>
 						<p>Dependent types can be used to pass type information around when solving for types.</p>
+						<p>Implicitly generated traits can be defined in terms of themselves, albeit with different type parameters.</p>
+						<p>More than an "if" statement, recursive patterns can be made into "loops."</p>
 					</section>
-				-->
 				</section>
 
 				<section>
@@ -405,7 +413,7 @@ object Mapper{
 						</code></pre>
 					</section>
 					<section>
-						<h3>It Works!</h3>
+						<h3>Type Inference</h3>
 						<pre><code trim-data>
 val in = List(List(1))
 val out = MapIt(in, {x: Int => x+1})
@@ -438,7 +446,6 @@ object Mapper{
 }
 						</code></pre>
 					</section>
-					<!--
 					<section>
 						<h3>Take Away</h3>
 						<ol>
@@ -447,7 +454,6 @@ object Mapper{
 							<li>Type refinement can help the compiler recapture "lost" type information.</li>
 						</ol>
 					</section>
-				-->
 				</section>
 
 				<section>
@@ -514,88 +520,44 @@ val nadda = Branch(42, Leaf, b1) //won't do it either
 						</code></pre>
 						<p>Sure does!</p>
 					</section>
-					<!--
 					<section>
-						<h3>Take Away</h3>
-						<ol>
-							<li>Any algorithm or data structure that makes use of this can be made proveably correct. If it compiles, it must work.</li>
-							<li>The proof is, in general, a function of how you define and use it.</li>
-						</ol>
-					</section>
-				-->
-				</section>
-				<section>
-					<section>
-						<h3>Less Restrictive Proofs</h3>
-						<p>Always making the left hand side of the tree be greater than or equal to the right hand tree is a tough restriction to work within.</p>
-					</section>
-					<section>
-						<h3>Removing the Left Hand Invariant</h3>
-						<p>Ideally we'd want something that looks like this</p>
+						<h3>More General Case</h3>
+						<p>What we'd really like is if we could have a balanced tree not restricted to left heavy.</p>
 						<pre><code trim-data>
-object Balanced{
-  def apply[T, D <: Nat](value: T, left0: Tree[T], right0: Tree[T])
-    (implicit diff: Diff.Aux[left0.N, right0.N, D],
-              lte: LTEq[D, _1]): Aux[T, Succ[left0.N]] =
-
-  def apply[T, D <: Nat](value: T, left0: Tree[T], right0: Tree[T])
-    (implicit diff: Diff.Aux[right0.N, left0.N, D],
-              lte: LTEq[D, _1]): Aux[T, Succ[right0.N]] =
-}
+val lower = Branch(1, Leaf, Leaf)
+val right = Branch(42, Leaf, lower)
 						</code></pre>
-						<p>This won't compile.</p>
 					</section>
 					<section>
-						<h3>Take 2</h3>
+						<h3>Use an Indirection</h3>
+						<p>You can't directly map to a single method for mutually exclusive proofs.</p>
 						<pre><code trim-data>
-object Balanced extends LowPriortyBalanced{
-  def apply[T, D <: Nat](value: T, left0: Tree[T], right0: Tree[T])
-    (implicit diff: Diff.Aux[left0.N, right0.N, D],
-              lte: LTEq[D, _1]): Aux[T, Succ[left0.N]] =
-}
-trait LowPriorityBalanced{
-  def apply[T, D <: Nat](value: T, left0: Tree[T], right0: Tree[T])
-    (implicit diff: Diff.Aux[right0.N, left0.N, D],
-              lte: LTEq[D, _1]): Aux[T, Succ[right0.N]] =
-}
-						</code></pre>
-						<p>Compiles but doesn't work.</p>
-					</section>
-					<section>
-						<h3>Use a Secondary Implicit</h3>
-						<pre><code trim-data>
-object Balanced{
+object Branch{
   def apply[T](value: T, left0: Tree[T], right0: Tree[T])
-    (implicit tb: TreeBuilder[T, left0.N, right0.N]): Branch.Aux[T, builder.Size] = 
+    (implicit tb: TreeBuilder[T, left0.N, right0.N]): Aux[T, builder.Size] = 
       tb(value, left0, right0)
-
-  trait TreeBuilder[T, N <: Nat, M <: Nat]{
-    type Size <: Nat
-    def apply(v: T, l: Tree[T], r: Tree[T]): Tree[T, Size]
-  }
-
-  object TreeBuilder{
-    def apply[T, N <: Nat, M <: Nat](implicit tb: TreeBuilder[T, N, M]) = tb
-  }
+}
+trait TreeBuilder[T, N <: Nat, M <: Nat]{
+  type Size <: Nat
+  def apply(v: T, l: Tree[T], r: Tree[T]): Tree[T, Size]
 }
 						</code></pre>
 					</section>
 					<section>
-						<h3>Define TreeBuilder</h3>
+						<h3>Define Like Before</h3>
 						<pre><code trim-data>
-object TreeBuilder extends LowPrioryBuilder{
+object TreeBuilder with LowPriorityTreeBuilder{
   def apply[T, N <: Nat, M <: Nat]
-    (implicit tb: TreeBuilder[T, N, M]): Aux[T, N, M, tb.Size] = tb
+  	(implicit tb: TreeBuilder[T, N, M]): Aux[T, N, M, tb.Size] = tb
 
   type Aux[T, N <: Nat, M <: Nat, Size0 <: Nat] = 
     TreeBuilder[T, N, M] {type Size = Size0}
-
-  //object continues on next slide...
 						</code></pre>
-						</section>
-						<section>
-							<h3>Define the Left Hand Side</h3>
-							<pre><code trim-data>
+						<p>A paradox, the Aux capturing the dependent type is defined in terms of the dependent type.</p>
+					</section>
+					<section>
+						<h3>Half The Proof</h3>
+						<pre><code trim-data>
   implicit def mkLeft[T, N0 <: Nat, M <: Nat, D <: Nat]
     (implicit diff: Diff.Aux[N0, M, D], 
               lte: LTEq[D, _1]): Aux[T, N0, M, Succ[N0]] =
@@ -610,47 +572,25 @@ object TreeBuilder extends LowPrioryBuilder{
       }
 }
 						</code></pre>
+						<p>Flip "right" and "left" for the other half</p>
 					</section>
-					<section>
-						<h3>And The Right Hand Side</h3>
-						<pre><code trim-data>
-trait LowPrioryBalance{
-  implicit def mkRight[T, N0 <: Nat, M <: Nat, D <: Nat]
-    (implicit diff: Diff.Aux[M, N0, D], 
-              lte: LTEq[D, _1]): TreeBuilder.Aux[T, N0, M, Succ[M]] =
-      new TreeBuilder[T, N0, M] {
-        type Size = Succ[M]
-
-        def apply(value: T, left0: Tree[T], right0: Tree[T]) =
-          new Branch[T] {
-            val left = left0
-            val right = right0
-            type N = Succ[M]
-          }
-    }
-}
-						</code></pre>
-					</section>
-					<section>
-						<h3>Does it Work?</h3>
-						<pre><code trim-data>
-val one = Balanced(1, Leaf, Leaf)
-val two = Balanced(2, Leaf, one)
-
-identity[Branch.Aux[Int,_2]](two)
-						</code></pre>
-						<p>Yup!</p>
-					</section>
-					<!--
 					<section>
 						<h3>Take Away</h3>
 						<ol>
-							<li>Multiple valid conditions sometimes require the use of a secondary witness/type class.</li>
-							<li>The same structure can be used in multiple situations and with different invariants. Be careful.</li>
-							<li>Sometimes the type refinement has to be recursively defined by the type that has paradoxically been "lost."</li>
+							<li>Any algorithm or data structure that makes use of this can be made proveably correct.</li>
+							<li>Multiple valid conditions sometimes require the use of a secondary type class that nests the proof.</li>
+							<li>Sometimes the type refinement has to be defined by the type that has paradoxically been "lost."</li>
 						</ol>
 					</section>
-				-->
+				</section>
+
+				<section>
+					<h3>Final Thoughts</h3>
+					<ol>
+						<li>Compile time costs.</li>
+						<li>Run time costs.</li>
+						<li>Understand that proofs are programs in and of themselves except they can't be easily unit tested. It compiles or it doesn't!*</li>
+					</ol>
 				</section>
 
 				<section>
