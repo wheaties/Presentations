@@ -24,8 +24,9 @@
 	</head>
 
 	<body>
-
 		<div class="reveal">
+
+
 
 			<!-- Any section element inside of this container is displayed as a slide -->
 			<div class="slides">
@@ -36,7 +37,6 @@
 						<small><a href="https://twitter.com/OweinReese">@OweinReese</a></small>
 					</p>
 				</section>
-
 				<section>
 					<section>
 						<h2>What is a Dependent Type?</h2>
@@ -544,12 +544,12 @@ val right = Branch(42, Leaf, lower)
 						<pre><code trim-data>
 object Branch{
   def apply[T](value: T, left0: Tree[T], right0: Tree[T])
-    (implicit tb: TreeBuilder[T, left0.N, right0.N]): Aux[T, builder.Height] = 
+    (implicit tb: TreeBuilder[T, left0.N, right0.N]): Aux[T, tb.Height] = 
       tb(value, left0, right0)
 }
 trait TreeBuilder[T, N <: Nat, M <: Nat]{
   type Height <: Nat
-  def apply(v: T, l: Tree[T], r: Tree[T]): Branch.Aux[T, Size]
+  def apply(v: T, l: Tree[T], r: Tree[T]): Branch.Aux[T, Height]
 }
 						</code></pre>
 					</section>
@@ -608,6 +608,10 @@ object TreeBuilder with LowPriorityTreeBuilder{
 					<h1>Questions?</h1>					
 				</section>
 
+			</div>
+
+			<div style="position: fixed; display: block; left: 10px; bottom: 10px">
+				<img src="MediaMath_Logo_Border_CMYK_notagline.png">
 			</div>
 
 		</div>
