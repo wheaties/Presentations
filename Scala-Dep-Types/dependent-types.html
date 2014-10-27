@@ -544,12 +544,12 @@ val right = Branch(42, Leaf, lower)
 						<pre><code trim-data>
 object Branch{
   def apply[T](value: T, left0: Tree[T], right0: Tree[T])
-    (implicit tb: TreeBuilder[T, left0.N, right0.N]): Aux[T, builder.Height] = 
+    (implicit tb: TreeBuilder[T, left0.N, right0.N]): Aux[T, tb.Height] = 
       tb(value, left0, right0)
 }
 trait TreeBuilder[T, N <: Nat, M <: Nat]{
   type Height <: Nat
-  def apply(v: T, l: Tree[T], r: Tree[T]): Branch.Aux[T, Size]
+  def apply(v: T, l: Tree[T], r: Tree[T]): Branch.Aux[T, Height]
 }
 						</code></pre>
 					</section>
