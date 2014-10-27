@@ -79,7 +79,7 @@ val f2 = new Foo{}
 val b2 = new f2.Bar()
 
 f1.doNothing(b1) //fine
-f1.doNothing(b2) //won't compiless
+f1.doNothing(b2) //won't compile
 						</code></pre>
 					</section>
 					<section>
@@ -102,7 +102,8 @@ trait IsTraversableLike[Repr]{
 
 				<section>
 					<section>
-						<h3>Build a Type Extractor</h3>
+						<h3>First Example</h3>
+						<p>Building a type extractor.</p>
 						<pre><code trim-data>
 trait Inner[F]{
   type T
@@ -121,7 +122,7 @@ object Inner{
 						</div>
 					</section>
 					<section>
-						<h3>Now Make use of the Types</h3>
+						<h3>A More Practical Example</h3>
 						<pre><code trim-data>
 trait IsFuture[F]{
   type T
@@ -143,11 +144,12 @@ object IsFuture{
 					<section>
 						<h3>Use as an Implicit Guard</h3>
 						<pre><code trim-data>
-def logResult[Thing](thing: Thing)(implicit isf: IsFuture[Thing]): Future[isf.T] = 
-  isf(thing) map{ x =>
-    log info s"I got a result of $x"
-    x
-  }
+def logResult[Thing](thing: Thing)
+  (implicit isf: IsFuture[Thing]): Future[isf.T] = 
+    isf(thing) map{ x =>
+      log info s"I got a result of $x"
+      x
+    }
   						</code></pre>
   						<p>Here, IsFuture witnesses that the type "Thing" is a Future and allows us to convert it to it's explicit and fully qualified type.</p>
 					</section>
@@ -173,7 +175,7 @@ trait Apart[F]{
   def apply(f: F): W[T]
 }
 						</code></pre>
-						<div class="fragment">
+						<div>
 							<pre><code trim-data>
 object Apart{
   def apply[F](implicit apart: Apart[F]) = apart
@@ -229,10 +231,11 @@ object Apart{
 							<pre><code trim-data>
 import scalaz._
 
-def mapZero[Thing, F[_], A](thing: Thing)(implicit apart: Apart.Aux[Thing, A, F], 
-                                                   f: Functor[F], 
-                                                   m: Monoid[A]): F[A] =
-  f.map(apart(thing))(_ => m.zero)
+def mapZero[Thing, F[_], A](thing: Thing)
+  (implicit apart: Apart.Aux[Thing, A, F], 
+                f: Functor[F], 
+                m: Monoid[A]): F[A] =
+    f.map(apart(thing))(_ => m.zero)
 							</code></pre>
 						</div>
 					</section>
@@ -249,8 +252,8 @@ def mapZero[Thing, F[_], A](thing: Thing)(implicit apart: Apart.Aux[Thing, A, F]
 
 				<section>
 					<section>
-						<h3>Type Level Pattern Matching</h3>
-						<p>Like a compile time "orElse."</p>
+						<h3>Type Level "if" Statement</h3>
+						<p>ApplyEither is like a compile time "orElse."</p>
 						<pre><code trim-data>
 val out = ApplyEither(1, {x: Int => 42}, {x: Double => "no"})
 assert(out == 42)
@@ -258,7 +261,7 @@ assert(out == 42)
 val out2 = ApplyEither(2.0, {x: Int => 42}, {x: Double => "no"})
 assert(out2 == "no")
 						</code></pre>
-						<p>At compilation time, the function that compiles is the function that is chosen.</p>
+						<p>The function that compiles is the function that is chosen.</p>
 					</section>
 					<section>
 						<h3>The Set Up</h3>
@@ -297,15 +300,16 @@ trait LowPriorityEApply{
 					<section>
 						<h3>Take Away</h3>
 						<ol>
+							<li>Pattern matching on types only works if the types are mutually exclusive</li>
 							<li>Use implicit resolution order to avoid implicit ambiguity.</li>
-							<li>Acts as a type level "if" statement.</p>
+							<li>Don't forget to use the dependent type to help the compiler avoid "Any" or "AnyRef."</li>
 						</ol>
 					</section>
 				</section>
 
 				<section>
 					<section>
-						<h3>Walking the Type Structure</h3>
+						<h3>Compile Time Loops</h3>
 						<p>Limitations on Inner and Apart?</p>
 						<pre><code trim-data>
 case class Foo[V](value: V)
@@ -318,8 +322,7 @@ zero(Foo(Foo(1))) //won't compile!
 						<p>Neither goes deeper than the first type constructor.</p>
 					</section>
 					<section>
-						<h3>Recursive Structure?</h3>
-						<p>Define another bland type like Inner</p>
+						<h3>A Typeclass Like "Inner"</h3>
 						<pre><code trim-data>
 trait Unwrap[F]{
   type Inner
@@ -359,9 +362,11 @@ assert(out == 0)
 					</section>
 					<section>
 						<h3>Take Away</h3>
-						<p>Dependent types can be used to pass type information around when solving for types.</p>
-						<p>Implicitly generated traits can be defined in terms of themselves, albeit with different type parameters.</p>
-						<p>More than an "if" statement, recursive patterns can be made into "loops."</p>
+						<ol>
+							<li>Dependent types can be used to pass type information around when solving for types.</li>
+							<li>Implicitly generated traits can be defined in terms of themselves, albeit with different type parameters.</li>
+							<li>Loops require a type structure that can be recursed over.</li>
+						</ol>
 					</section>
 				</section>
 
@@ -370,7 +375,8 @@ assert(out == 0)
 						<h3>Doing Something Useful</h3>
 						<p>Let's use types to guide the behavior of our application in a more direct manner. Who likes writing this?</p>
 						<pre><code trim-data>
-def annoy[A](that: Future[List[Set[Int]]], f: Int => A): Future[List[Set[A]]] =
+def annoy[A](that: Future[List[Set[Int]]], 
+                f: Int => A): Future[List[Set[A]]] =
   that map{ 
     _ map{
       _ map f
@@ -413,7 +419,8 @@ object Mapper{
 						</code></pre>
 					</section>
 					<section>
-						<h3>Type Inference</h3>
+						<h3>Type Equality</h3>
+						<p>Value equality checks out.</p>
 						<pre><code trim-data>
 val in = List(List(1))
 val out = MapIt(in, {x: Int => x+1})
@@ -421,7 +428,7 @@ val out = MapIt(in, {x: Int => x+1})
 assert(List(List(2)) == out)
 						</code></pre>
 						<div class="fragment">
-							<p>but equality doesn't test types...</p>
+							<p>but value equality doesn't test types...</p>
 							<pre><code trim-data>
 scala> identity[List[List[Int]]](out)
 type mismatch;
@@ -432,7 +439,7 @@ required: List[List[Int]]
 						</div>
 					</section>
 					<section>
-						<h3>More Types to the Rescue</h3>
+						<h3>Type Refinement to the Rescue</h3>
 						<pre><code trim-data>
 object Mapper{
   type Aux[A, B, C, Out0] = Mapper[A, B, C]{ type Out = Out0 }
@@ -476,6 +483,7 @@ object Leaf extends Tree[Nothing]{
   type N = _0
 }
 trait Branch[T] extends Tree[T]{
+  def value: T
   def left: Tree[T]
   def right: Tree[T]
 }
@@ -496,10 +504,11 @@ trait Branch[T] extends Tree[T]{
 object Branch {
   type Aux[T, N0 <: Nat] = Branch[T] { type N = N0 }
 
-  def apply[T, D <: Nat](value: T, left0: Tree[T], right0: Tree[T])
+  def apply[T, D <: Nat](value0: T, left0: Tree[T], right0: Tree[T])
     (implicit diff: Diff.Aux[left0.N, right0.N, D],
               lte: LTEq[D, _1]): Aux[T, Succ[left0.N]] =
       new Branch[T] {
+        val value = value0
         val left = left0
         val right = right0
         type N = Succ[left0.N]
@@ -527,6 +536,7 @@ val nadda = Branch(42, Leaf, b1) //won't do it either
 val lower = Branch(1, Leaf, Leaf)
 val right = Branch(42, Leaf, lower)
 						</code></pre>
+						<p>The problem is how we originally defined branch creation.</p>
 					</section>
 					<section>
 						<h3>Use an Indirection</h3>
@@ -534,12 +544,12 @@ val right = Branch(42, Leaf, lower)
 						<pre><code trim-data>
 object Branch{
   def apply[T](value: T, left0: Tree[T], right0: Tree[T])
-    (implicit tb: TreeBuilder[T, left0.N, right0.N]): Aux[T, builder.Size] = 
+    (implicit tb: TreeBuilder[T, left0.N, right0.N]): Aux[T, builder.Height] = 
       tb(value, left0, right0)
 }
 trait TreeBuilder[T, N <: Nat, M <: Nat]{
-  type Size <: Nat
-  def apply(v: T, l: Tree[T], r: Tree[T]): Tree[T, Size]
+  type Height <: Nat
+  def apply(v: T, l: Tree[T], r: Tree[T]): Branch.Aux[T, Size]
 }
 						</code></pre>
 					</section>
@@ -548,10 +558,10 @@ trait TreeBuilder[T, N <: Nat, M <: Nat]{
 						<pre><code trim-data>
 object TreeBuilder with LowPriorityTreeBuilder{
   def apply[T, N <: Nat, M <: Nat]
-  	(implicit tb: TreeBuilder[T, N, M]): Aux[T, N, M, tb.Size] = tb
+  	(implicit tb: TreeBuilder[T, N, M]): Aux[T, N, M, tb.Height] = tb
 
-  type Aux[T, N <: Nat, M <: Nat, Size0 <: Nat] = 
-    TreeBuilder[T, N, M] {type Size = Size0}
+  type Aux[T, N <: Nat, M <: Nat, Height0 <: Nat] = 
+    TreeBuilder[T, N, M] {type Height = Height0}
 						</code></pre>
 						<p>A paradox, the Aux capturing the dependent type is defined in terms of the dependent type.</p>
 					</section>
@@ -561,13 +571,14 @@ object TreeBuilder with LowPriorityTreeBuilder{
   implicit def mkLeft[T, N0 <: Nat, M <: Nat, D <: Nat]
     (implicit diff: Diff.Aux[N0, M, D], 
               lte: LTEq[D, _1]): Aux[T, N0, M, Succ[N0]] =
-      new TreeBuilder[T, N0, M] {
-        type Size = Succ[N0]
-        def apply(value: T, left0: Tree[T], right0: Tree[T]) =
+      new TreeBuilder[T, N0, M] { self =>
+        type Height = Succ[N0]
+        def apply(value0: T, left0: Tree[T], right0: Tree[T]) =
           new Branch[T] {
+            val value = value0
             val left = left0
             val right = right0
-            type N = Succ[N0]
+            type N = self.Height
           }
       }
 }
@@ -577,7 +588,7 @@ object TreeBuilder with LowPriorityTreeBuilder{
 					<section>
 						<h3>Take Away</h3>
 						<ol>
-							<li>Any algorithm or data structure that makes use of this can be made proveably correct.</li>
+							<li>Proofs are only as good as their use can be enforced, i.e. don't let your code work around it.</li>
 							<li>Multiple valid conditions sometimes require the use of a secondary type class that nests the proof.</li>
 							<li>Sometimes the type refinement has to be defined by the type that has paradoxically been "lost."</li>
 						</ol>
@@ -587,8 +598,8 @@ object TreeBuilder with LowPriorityTreeBuilder{
 				<section>
 					<h3>Final Thoughts</h3>
 					<ol>
-						<li>Compile time costs.</li>
-						<li>Run time costs.</li>
+						<li>There are compile time costs.</li>
+						<li>Sometimes there are run time costs too.</li>
 						<li>Understand that proofs are programs in and of themselves except they can't be easily unit tested. It compiles or it doesn't!*</li>
 					</ol>
 				</section>
