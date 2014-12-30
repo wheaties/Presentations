@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+
+		<title>Dependent Types in Scala - Some Tips, Tricks and Techniques</title>
+
+		<meta name="description" content="Dependent Types in Scala - Tips, Tricks and Techniques">
+		<meta name="author" content="Owein Reese">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/css/reveal.min.css">
+		<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/css/theme/sky.css" id="theme">
+		<link rel="stylesheet" href="scala.css">
+	</head>
+
+	<body>
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h2>Dependent Types</h2>
+					<h3>Through the Looking Glass</h3>
+					<p>
+						<small><a href="https://twitter.com/OweinReese">@OweinReese</a></small>
+					</p>
+				</section>
+				<section>
+					<section>
+						<h3>Examples of Path Dependent Types?</h3>
+						<ul>
+							<li>Any nested class, trait or object</li>
+							<li>An abstract type defined on a trait or abstract class</li>
+						<ul>
+					</section>
+					<section>
+						<div>
+							<pre>
+<span class="k">trait</span> <span class="nc">Foo</span><span class="o">{</span>
+  <span class="k">class</span> <span class="nc">Bar</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span>
+
+  <span class="k">def</span> <span class="n">use</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">bar</span><span class="k">:</span> <span class="kt">Bar</span><span class="o">)(</span><span class="n">f</span><span class="k">:</span> <span class="kt">Bar</span> <span class="o">=&gt;</span> <span class="n">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">A</span>
+<span class="o">}</span>
+
+<span class="k">val</span> <span class="n">foo</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Foo</span><span class="o">{}</span>
+<span class="k">val</span> <span class="n">fooBar</span> <span class="k">=</span> <span class="k">new</span> <span class="n">foo</span><span class="o">.</span><span class="nc">Bar</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">oh</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Foo</span><span class="o">{}</span>
+<span class="k">val</span> <span class="n">dear</span> <span class="k">=</span> <span class="k">new</span> <span class="n">oh</span><span class="o">.</span><span class="nc">Bar</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+							</pre>
+						</div>
+					</section>
+					<section>
+						<pre>
+<span class="k">trait</span> <span class="nc">Foo</span><span class="o">{</span>
+  <span class="k">type</span> <span class="kt">Bar</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Bar</span>
+<span class="o">}</span>
+						</pre>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h4>Transforming Functions</h4>
+					</section>
+					<section>
+						<h4>Standard Library Version</h4>
+						<pre>
+<span class="k">trait</span> <span class="nc">Function1</span><span class="o">[</span><span class="kt">-T1</span>, <span class="kt">+R</span><span class="o">]</span> <span class="nc">extends</span> <span class="nc">AnyRef</span> <span class="o">{</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">v1</span><span class="k">:</span> <span class="kt">T1</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span>
+
+  <span class="k">def</span> <span class="n">compose</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">g</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">T1</span><span class="o">)</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">R</span> <span class="k">=</span> <span class="o">{</span> <span class="n">x</span> <span class="k">=&gt;</span> <span class="n">apply</span><span class="o">(</span><span class="n">g</span><span class="o">(</span><span class="n">x</span><span class="o">))</span> <span class="o">}</span>
+
+  <span class="k">def</span> <span class="n">andThen</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">g</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=&gt;</span> <span class="n">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">T1</span> <span class="o">=&gt;</span> <span class="n">A</span> <span class="k">=</span> <span class="o">{</span> <span class="n">x</span> <span class="k">=&gt;</span> <span class="n">g</span><span class="o">(</span><span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="o">))</span> <span class="o">}</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="n">toString</span><span class="o">()</span> <span class="k">=</span> <span class="s">&quot;&lt;function1&gt;&quot;</span>
+<span class="o">}</span>
+						</pre>
+					</section>
+					<section>
+						<h4>A Dependently Typed Function</h4>
+						<pre>
+<span class="k">trait</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">-T</span><span class="o">]</span> <span class="o">{</span> <span class="n">self</span> <span class="k">=&gt;</span>
+  <span class="k">type</span> <span class="kt">R</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span>
+<span class="o">}</span>
+						</pre>
+					</section>
+					<section>
+						<pre>
+<span class="k">trait</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">-T</span><span class="o">]</span> <span class="o">{</span> <span class="n">self</span> <span class="k">=&gt;</span>
+  <span class="k">type</span> <span class="kt">R</span>
+
+  <span class="k">def</span> <span class="n">andThen</span><span class="o">(</span><span class="n">dep</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">R</span><span class="o">])</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">T</span><span class="o">]</span> <span class="o">{</span>
+    <span class="k">type</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">dep</span><span class="o">.</span><span class="n">R</span>
+
+    <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">dep</span><span class="o">(</span><span class="n">self</span><span class="o">(</span><span class="n">x</span><span class="o">))</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span>
+<span class="o">}</span>
+						</pre>
+					</section>
+					<section></section>
+					<section></section>
+				</section>
+			</div>
+
+			<div style="position: fixed; display: block; left: 10px; bottom: 10px">
+				<img src="../Scala-Dep-Types/MediaMath_Logo_Border_CMYK_notagline.png">
+			</div>
+
+		</div>
+
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/lib/js/head.min.js"></script>
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/js/reveal.min.js"></script>
+
+		<script>
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+				overview: true,
+				touch: true,
+				theme: 'sky',
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+				minScale: 0.7,
+				maxScale: 1.0,
+
+				// Parallax scrolling
+				// parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+				// parallaxBackgroundSize: '2100px 900px',
+
+				dependencies: [
+					{ 
+						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/lib/js/classList.js', 
+						condition: function() { return !document.body.classList; } 
+					}/*,
+					{
+						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/markdown/marked.js', 
+						condition: function() { return !!document.querySelector( '[data-markdown]' ); } 
+					},
+					{ 
+						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/markdown/markdown.js', 
+						condition: function() { return !!document.querySelector( '[data-markdown]' ); } 
+					}*/
+				]
+			});
+
+		</script>
+
+
+	</body>
+</html>

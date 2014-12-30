@@ -1,0 +1,93 @@
+<div class="highlight"><pre><span class="k">trait</span> <span class="nc">Foo</span><span class="o">{</span>
+  <span class="k">class</span> <span class="nc">Bar</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span>
+
+  <span class="k">def</span> <span class="n">use</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">bar</span><span class="k">:</span> <span class="kt">Bar</span><span class="o">)(</span><span class="n">f</span><span class="k">:</span> <span class="kt">Bar</span> <span class="o">=&gt;</span> <span class="n">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">A</span>
+<span class="o">}</span>
+
+<span class="k">val</span> <span class="n">foo</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Foo</span><span class="o">{}</span>
+<span class="k">val</span> <span class="n">fooBar</span> <span class="k">=</span> <span class="k">new</span> <span class="n">foo</span><span class="o">.</span><span class="nc">Bar</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+<span class="k">val</span> <span class="n">oh</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Foo</span><span class="o">{}</span>
+<span class="k">val</span> <span class="n">dear</span> <span class="k">=</span> <span class="k">new</span> <span class="n">oh</span><span class="o">.</span><span class="nc">Bar</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
+
+<span class="k">trait</span> <span class="nc">Foo</span><span class="o">{</span>
+  <span class="k">type</span> <span class="kt">Bar</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Bar</span>
+<span class="o">}</span>
+
+<span class="k">trait</span> <span class="nc">Function1</span><span class="o">[</span><span class="kt">-T1</span>, <span class="kt">+R</span><span class="o">]</span> <span class="nc">extends</span> <span class="nc">AnyRef</span> <span class="o">{</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">v1</span><span class="k">:</span> <span class="kt">T1</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span>
+
+  <span class="k">def</span> <span class="n">compose</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">g</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">T1</span><span class="o">)</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">R</span> <span class="k">=</span> <span class="o">{</span> <span class="n">x</span> <span class="k">=&gt;</span> <span class="n">apply</span><span class="o">(</span><span class="n">g</span><span class="o">(</span><span class="n">x</span><span class="o">))</span> <span class="o">}</span>
+
+  <span class="k">def</span> <span class="n">andThen</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">g</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=&gt;</span> <span class="n">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">T1</span> <span class="o">=&gt;</span> <span class="n">A</span> <span class="k">=</span> <span class="o">{</span> <span class="n">x</span> <span class="k">=&gt;</span> <span class="n">g</span><span class="o">(</span><span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="o">))</span> <span class="o">}</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="n">toString</span><span class="o">()</span> <span class="k">=</span> <span class="s">&quot;&lt;function1&gt;&quot;</span>
+<span class="o">}</span>
+
+<span class="k">trait</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">-T</span><span class="o">]</span> <span class="o">{</span> <span class="n">self</span> <span class="k">=&gt;</span>
+  <span class="k">type</span> <span class="kt">R</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span>
+<span class="o">}</span>
+
+<span class="k">def</span> <span class="n">andThen</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">g</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=&gt;</span> <span class="n">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">T1</span> <span class="o">=&gt;</span> <span class="n">A</span> <span class="k">=</span> <span class="o">{</span> <span class="n">x</span> <span class="k">=&gt;</span> <span class="n">g</span><span class="o">(</span><span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="o">))</span> <span class="o">}</span>
+
+<span class="k">def</span> <span class="n">andThen</span><span class="o">(</span><span class="n">dep</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">R</span><span class="o">])</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">T</span><span class="o">]</span> <span class="o">{</span>
+  <span class="k">type</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">dep</span><span class="o">.</span><span class="n">R</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">dep</span><span class="o">(</span><span class="n">self</span><span class="o">(</span><span class="n">x</span><span class="o">))</span>
+<span class="o">}</span>
+
+<span class="k">trait</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">-T</span><span class="o">]</span> <span class="o">{</span> <span class="n">self</span> <span class="k">=&gt;</span>
+  <span class="k">type</span> <span class="kt">R</span>
+
+  <span class="k">def</span> <span class="n">andThen</span><span class="o">(</span><span class="n">dep</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">R</span><span class="o">])</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">T</span><span class="o">]</span> <span class="o">{</span>
+    <span class="k">type</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">dep</span><span class="o">.</span><span class="n">R</span>
+
+    <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">dep</span><span class="o">(</span><span class="n">self</span><span class="o">(</span><span class="n">x</span><span class="o">))</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span>
+<span class="o">}</span>
+
+<span class="k">def</span> <span class="n">compose</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">g</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">T1</span><span class="o">)</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">R</span> <span class="k">=</span> <span class="o">{</span> <span class="n">x</span> <span class="k">=&gt;</span> <span class="n">apply</span><span class="o">(</span><span class="n">g</span><span class="o">(</span><span class="n">x</span><span class="o">))</span> <span class="o">}</span>
+
+<span class="k">def</span> <span class="n">compose</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">dep</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">A</span><span class="o">]{</span>
+  <span class="k">type</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">self</span><span class="o">.</span><span class="n">R</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">self</span><span class="o">(</span><span class="n">dep</span><span class="o">(</span><span class="n">x</span><span class="o">))</span>
+<span class="o">}</span>
+
+<span class="k">trait</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">-T</span><span class="o">]</span> <span class="o">{</span> <span class="n">self</span> <span class="k">=&gt;</span>
+  <span class="k">type</span> <span class="kt">R</span>
+
+  <span class="k">def</span> <span class="n">andThen</span><span class="o">(</span><span class="n">dep</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">R</span><span class="o">])</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">T</span><span class="o">]</span> <span class="o">{</span>
+    <span class="k">type</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">dep</span><span class="o">.</span><span class="n">R</span>
+
+    <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">dep</span><span class="o">(</span><span class="n">self</span><span class="o">(</span><span class="n">x</span><span class="o">))</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="n">compose</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">dep</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">A</span><span class="o">])(</span><span class="k">implicit</span> <span class="n">ev</span><span class="k">:</span> <span class="kt">dep.R</span> <span class="k">&lt;:</span><span class="kt">&lt;</span> <span class="kt">T</span><span class="o">)</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">A</span><span class="o">]{</span>
+  	<span class="k">type</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">self</span><span class="o">.</span><span class="n">R</span>
+
+  	<span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">self</span><span class="o">(</span><span class="n">ev</span><span class="o">(</span><span class="n">dep</span><span class="o">(</span><span class="n">x</span><span class="o">)))</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span>
+<span class="o">}</span>
+
+
+<span class="k">package</span> <span class="nn">scala.collection.generic</span>
+
+<span class="k">trait</span> <span class="nc">IsTraversableOnce</span><span class="o">[</span><span class="kt">Repr</span><span class="o">]{</span>
+  <span class="k">type</span> <span class="kt">A</span>
+  <span class="k">val</span> <span class="n">conversion</span><span class="k">:</span> <span class="kt">Repr</span> <span class="o">=&gt;</span> <span class="nc">GenTraversableOnce</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span>
+<span class="o">}</span>
+
+<span class="k">trait</span> <span class="nc">IsTraversableLike</span><span class="o">[</span><span class="kt">Repr</span><span class="o">]{</span>
+  <span class="k">type</span> <span class="kt">A</span>
+  <span class="k">def</span> <span class="n">conversion</span><span class="o">(</span><span class="n">repr</span><span class="k">:</span> <span class="kt">Repr</span><span class="o">)</span><span class="k">:</span> <span class="kt">GenTraversableLike</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">Repr</span><span class="o">]</span>
+<span class="o">}</span>
+</pre></div>
