@@ -32,14 +32,12 @@
 				</section>
 				<section>
 					<section>
-						<h3>Examples of Path Dependent Types?</h3>
-						<ul>
-							<li>Any nested class, trait or object</li>
-							<li>An abstract type defined on a trait or abstract class</li>
-						<ul>
+						<h3>Path Dependent Types</h3>
+						<p>So what makes a path dependent type and why is it so special?</p>
 					</section>
 					<section>
 						<div>
+							<h4>A Nested Class, Trait or Object</h4>
 							<pre>
 <span class="k">trait</span> <span class="nc">Foo</span><span class="o">{</span>
   <span class="k">class</span> <span class="nc">Bar</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span>
@@ -55,6 +53,22 @@
 						</div>
 					</section>
 					<section>
+						<h4>Abstract Types</h4>
+						<pre>
+<span class="k">trait</span> <span class="nc">Foo</span><span class="o">{</span>
+  <span class="k">type</span> <span class="kt">Bar</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Bar</span>
+<span class="o">}</span>
+
+<span class="k">def</span> <span class="n">bar</span><span class="o">(</span><span class="n">foo</span><span class="k">:</span> <span class="kt">Foo</span><span class="o">)</span><span class="k">:</span> <span class="kt">foo.Bar</span> <span class="o">=</span> <span class="n">foo</span><span class="o">(</span><span class="mi">42</span><span class="o">)</span>
+						</pre>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h3>Question</h3>
+						<p>Isn't</p>
 						<pre>
 <span class="k">trait</span> <span class="nc">Foo</span><span class="o">{</span>
   <span class="k">type</span> <span class="kt">Bar</span>
@@ -62,11 +76,12 @@
   <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Bar</span>
 <span class="o">}</span>
 						</pre>
-					</section>
-				</section>
-				<section>
-					<section>
-						<h4>Transforming Functions</h4>
+						<p>eerily similar to</p>
+						<pre>
+<span class="k">trait</span> <span class="nc">Foo</span><span class="o">[</span><span class="kt">Bar</span><span class="o">]{</span>
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Bar</span>
+<span class="o">}</span>
+						</pre>
 					</section>
 					<section>
 						<h4>Standard Library Version</h4>
@@ -95,7 +110,7 @@
 					</section>
 					<section>
 						<pre>
-<span class="k">trait</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">-T</span><span class="o">]</span> <span class="o">{</span> <span class="n">self</span> <span class="k">=&gt;</span>
+<span class="k">trait</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">-T</span><span class="o">]</span> <span class="nc">extends</span> <span class="nc">AnyRef</span> <span class="o">{</span> <span class="n">self</span> <span class="k">=&gt;</span>
   <span class="k">type</span> <span class="kt">R</span>
 
   <span class="k">def</span> <span class="n">andThen</span><span class="o">(</span><span class="n">dep</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">R</span><span class="o">])</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">T</span><span class="o">]</span> <span class="o">{</span>
@@ -104,13 +119,25 @@
     <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">dep</span><span class="o">(</span><span class="n">self</span><span class="o">(</span><span class="n">x</span><span class="o">))</span>
   <span class="o">}</span>
 
+  <span class="k">def</span> <span class="n">compose</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">dep</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span> <span class="k">=</span> <span class="o">???</span>
+
   <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span>
 <span class="o">}</span>
 						</pre>
 					</section>
-					<section></section>
-					<section></section>
+					<section>
+							<h4>Nothing for Free</h4>
+							<pre>
+<span class="k">def</span> <span class="n">compose</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">dep</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">A</span><span class="o">])(</span><span class="k">implicit</span> <span class="n">ev</span><span class="k">:</span> <span class="kt">dep.R</span> <span class="k">&lt;:</span><span class="kt">&lt;</span> <span class="kt">T</span><span class="o">)</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">A</span><span class="o">]{</span>
+  <span class="k">type</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">self</span><span class="o">.</span><span class="n">R</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">self</span><span class="o">(</span><span class="n">ev</span><span class="o">(</span><span class="n">dep</span><span class="o">(</span><span class="n">x</span><span class="o">)))</span>
+ <span class="o">}</span>
+							</pre>
+					</section>
 				</section>
+				<section></section>
+				<section></section>
 			</div>
 
 			<div style="position: fixed; display: block; left: 10px; bottom: 10px">

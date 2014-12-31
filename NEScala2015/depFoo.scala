@@ -15,13 +15,19 @@ trait Foo{
   def apply(x: Int): Bar
 }
 
-trait Function1[-T1, +R] extends AnyRef {
+def bar(foo: Foo): foo.Bar = foo(42)
+
+trait Foo[Bar]{
+  def apply(x: Int): Bar
+}
+
+trait Function1[-T1, +R] extends AnyRef { self =>
 
   def apply(v1: T1): R
 
   def compose[A](g: A => T1): A => R = { x => apply(g(x)) }
 
-  def andThen[A](g: R => A): T1 => A = { x => g(apply(x)) }
+  def andThen[A](g: R => A): T1 => A = g andThen self
 
   override def toString() = "<function1>"
 }
@@ -40,7 +46,7 @@ def andThen(dep: DepFun1[R]) = new DepFun1[T] {
   def apply(x: T): R = dep(self(x))
 }
 
-trait DepFun1[-T] { self =>
+trait DepFun1[-T]{ self =>
   type R
 
   def andThen(dep: DepFun1[R]) = new DepFun1[T] {
@@ -49,16 +55,18 @@ trait DepFun1[-T] { self =>
     def apply(x: T): R = dep(self(x))
   }
 
+  def compose[A](dep: DepFun1[A]) = ???
+
   def apply(x: T): R
 }
 
 def compose[A](g: A => T1): A => R = { x => apply(g(x)) }
 
-def compose[A](dep: DepFun1[A]) = new DepFun1[A]{
+def compose[A](dep: DepFun1[A])(implicit ev: dep.R <:< T) = new DepFun1[A]{
   type R = self.R
 
-  def apply(x: A): R = self(dep(x))
-}
+  def apply(x: A): R = self(ev(dep(x)))
+ }
 
 trait DepFun1[-T] { self =>
   type R
