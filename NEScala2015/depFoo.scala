@@ -108,12 +108,11 @@ class Foo[T](x: T){
   def magnitude[A](implicit itl: IsTraversableLike[T, A]) = itl(x).size
 }
 
-trait IsHigherKind[MA]{
+trait IsFuture[FA]{
   type A
-  type M[X]
 
-  def from(ma: MA): M[A]
-  def to(ma: M[A]): MA
+  def from(ma: FA): Future[A]
+  def to(ma: Future[A]): FA
 }
 
 //lalalalala

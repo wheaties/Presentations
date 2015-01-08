@@ -180,12 +180,11 @@
 						<h3>Typesafe Conversion</h3>
 						<pre>
 
-<span class="k">trait</span> <span class="nc">IsHigherKind</span><span class="o">[</span><span class="kt">MA</span><span class="o">]{</span>
+<span class="k">trait</span> <span class="nc">IsFuture</span><span class="o">[</span><span class="kt">FA</span><span class="o">]{</span>
   <span class="k">type</span> <span class="kt">A</span>
-  <span class="k">type</span> <span class="kt">M</span><span class="o">[</span><span class="kt">X</span><span class="o">]</span>
 
-  <span class="k">def</span> <span class="n">from</span><span class="o">(</span><span class="n">ma</span><span class="k">:</span> <span class="kt">MA</span><span class="o">)</span><span class="k">:</span> <span class="kt">M</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span>
-  <span class="k">def</span> <span class="n">to</span><span class="o">(</span><span class="n">ma</span><span class="k">:</span> <span class="kt">M</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span><span class="k">:</span> <span class="kt">MA</span>
+  <span class="k">def</span> <span class="n">from</span><span class="o">(</span><span class="n">ma</span><span class="k">:</span> <span class="kt">FA</span><span class="o">)</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span>
+  <span class="k">def</span> <span class="n">to</span><span class="o">(</span><span class="n">ma</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span><span class="k">:</span> <span class="kt">FA</span>
 <span class="o">}</span>
 						</pre>
 						<p>Also a compile time guard</p>
@@ -199,7 +198,7 @@
 <span class="o">}</span>
 
 <span class="k">class</span> <span class="nc">Foo</span><span class="o">[</span><span class="kt">T</span><span class="o">](</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">){</span>
-  <span class="k">def</span> <span class="n">magnitude</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">B</span><span class="o">](</span><span class="k">implicit</span> <span class="n">itl</span><span class="k">:</span> <span class="kt">IsTraversableLike</span><span class="o">[</span><span class="kt">T</span>, <span class="kt">A</span><span class="o">])</span> <span class="k">=</span> <span class="n">itl</span><span class="o">(</span><span class="n">x</span><span class="o">).</span><span class="n">size</span>
+  <span class="k">def</span> <span class="n">magnitude</span><span class="o">[</span><span class="kt">A</span>](</span><span class="k">implicit</span> <span class="n">itl</span><span class="k">:</span> <span class="kt">IsTraversableLike</span><span class="o">[</span><span class="kt">T</span>, <span class="kt">A</span><span class="o">])</span> <span class="k">=</span> <span class="n">itl</span><span class="o">(</span><span class="n">x</span><span class="o">).</span><span class="n">size</span>
 <span class="o">}</span>
 						</pre>
 						<p>Talk about adding that type parameter and api design.</p>
