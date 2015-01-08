@@ -105,7 +105,15 @@ trait IsTraversableLike[Repr, A]{
 }
 
 class Foo[T](x: T){
-  def bar[A, B](s: Set[B])(implicit itl: IsTraversableLike[T, A])
+  def magnitude[A](implicit itl: IsTraversableLike[T, A]) = itl(x).size
+}
+
+trait IsHigherKind[MA]{
+  type A
+  type M[X]
+
+  def from(ma: MA): M[A]
+  def to(ma: M[A]): MA
 }
 
 //lalalalala
@@ -189,3 +197,13 @@ trait LowPriorityTie{
       def apply(r: R, f: DepFun1[R]): f.R = f(r)
     }
 }
+
+//reasoning
+
+List[List[A]]
+
+List[List[List[List[A]]]]
+
+StateMonad[S, A]
+
+StateMonad[S1, StateMonad[S2, StateMonad[S3, StateMonad[S4, A]]]]
