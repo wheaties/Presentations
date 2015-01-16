@@ -206,3 +206,154 @@ List[List[List[List[A]]]]
 StateMonad[S, A]
 
 StateMonad[S1, StateMonad[S2, StateMonad[S3, StateMonad[S4, A]]]]
+
+
+//errors
+
+error: No implicit view available from A => scala.collection.GenTraversableOnce[B].
+def flatSize[A](l: List[A]) = foo(l, {x: List[A] => x.flatten}).size
+
+//flatten
+[B] => Int
+
+def flatten[B](implicit asTraversable: A => GenTraversableOnce[B]): List[B] = {
+  val b = genericBuilder[B]
+  for (xs <- sequential)
+    b ++= asTraversable(xs).seq
+  b.result()
+}
+
+implicit class ListOps[A](l: List[A]){
+  def flatSize: Int = l.flatten.size
+}
+
+def flatSize[B](l: List[A])
+  (implicit ast: A => GenTraversableOnce[B]): Int = 
+    l.flatten.size
+
+def flatten(implicit itl: IsTraversableLike[A]): List[itl.A] ={
+  val b = genericBuilder[B]
+  for (xs <- sequential)
+    b ++= itl.conversion(xs).seq
+  b.result()
+}
+
+def flatSize(l: List[A])
+  (implicit itl: IsTraversableLike[A]): Int =
+    l.flatten.size
+
+
+trait IsMyType[MA]{
+  type A
+
+  def apply(ma: MA): SomeType[A]
+}
+
+implicit def isMT[A0] = new IsMyType[SomeType[A]]{
+  type A = A0
+
+  def apply(ma: MA) = ma
+}
+
+//different
+
+def map[B](f: A => B): M[B]
+def flatMap[B](f: A => B)(implicit ism: IsM[B]): M[ism.A]
+
+opt map f match{
+  case None => //...code
+  case Some(Some(x)) => //...code
+  case Some(None) => //...!?
+}
+
+
+def map[B](f: T => B)(implicit tie: Tie[B]): M[tie.A] = 
+  dmap(f)(tie)
+def flatMap[B](f: T => B)(implicit tie: Tie[B]): M[tie.A] = 
+  dmap(f)(tie)
+def dmap[B](f: T => B)(implicit tie: Tie[B]): M[tie.A]
+
+trait Cont[+T, R]{ self =>
+  def apply(f: T => R): R
+
+  def map[B](f: T => B)(implicit tie: Tie[B, R]): Cont[tie.In, R] = dmap(f)(tie)
+  def flatMap[B](f: T => B)(implicit tie: Tie[B, R]): Cont[tie.In, R] = dmap(f)(tie)
+
+  def dmap[B](f: T => B)(implicit tie: Tie[B, R]) = new Cont[tie.In, R]{
+    def apply(g: tie.In => R): R = self(x => tie(f(x), g))
+  }
+}
+
+trait Tie[C, R]{
+  type In
+
+  def apply(c: C, f: In => R): R
+}
+
+object Tie extends LowPriorityTie{
+  def apply[C, R](implicit tie: Tie[C, R]): Aux[C, R, tie.In] = tie
+
+  implicit def tieFM[B, R]: Aux[Cont[B, R], R, B] =
+    new Tie[Cont[B, R]]{
+      type In = B
+
+      def apply(c: Cont[B, R], f: B => R): R = r(f)
+    }
+}
+
+trait LowPriorityTie{
+  type Aux[C, R, In0] = Tie[C, R]{ type In = In0 }
+
+  implicit def tieF[B, R]: Aux[B, R, R] =
+    new Tie[B, R]{
+      type In = B
+
+      def apply(r: B, f: B => R): R = f(r)
+    }
+}
+
+//final discussion
+
+val futfut: Future[Future[Unit]]
+val futtry: Future[Try[A]]
+
+futtry onComplete{
+  case Failure(ex) => //...
+  case Success(Success(x)) => //...
+  case Sucess(Failure(ex)) => //...!?
+}
+
+def yourMethod(f: A => B): Future[B]
+
+def yourMethod(f: A => B)(implicit knot: Knot[A, B]): Future[knot.R]
+
+trait Knot[A, FA]{
+  type R
+
+  def apply(in: Future[A], f: A => FA]): Future[R]
+}
+
+object Knot extends LowPriorityKnot{
+  def apply[A, FA](implicit knot: Knot[A, FA]): Aux[A, FA, knot.R] = knot
+
+  implicit def fut[A, A0]
+    (implicit ex: ExecutionContext): Aux[A, Future[A0], A0] =
+      new Knot[A, Future[A0]]{
+        type A = A0
+
+        def apply(in: Future[A], fa: A => Future[A0]) = in flatMap fa
+      }
+
+  implicit def try[A, A0]
+    (implicit ex: ExecutionContext): Aux[A, Try[A0], A0] =
+      new Knot[A, Try[A0]]{
+        type R = A0
+
+        def apply(in: Futurte[A], f: A => Try[A0]) = in flatMap { x => 
+          f(x) match{
+            case Success(x) => Future successful x
+            case Failure(ex) => Future failed ex
+          }
+        }
+      }
+}

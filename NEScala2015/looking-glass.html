@@ -32,184 +32,178 @@
 				</section>
 				<section>
 					<section>
-						<h3>Quick Review</h3>
-					</section>
-					<section>
-						<h4>A Nested Class, Trait or Object</h4>
-						<pre>
-<span class="k">trait</span> <span class="nc">Foo</span><span class="o">{</span>
-  <span class="k">class</span> <span class="nc">Bar</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span>
-
-  <span class="k">def</span> <span class="n">use</span><span class="o">(</span><span class="n">bar</span><span class="k">:</span> <span class="kt">Bar</span><span class="o">)</span><span class="k">:</span> <span class="kt">String</span>
-<span class="o">}</span>
-						</pre>
-					</section>
-					<section>
-						<pre>
-<span class="k">val</span> <span class="n">foo</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Foo</span><span class="o">{}</span>
-<span class="k">val</span> <span class="n">fooBar</span> <span class="k">=</span> <span class="k">new</span> <span class="n">foo</span><span class="o">.</span><span class="nc">Bar</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
-<span class="k">val</span> <span class="n">oh</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Foo</span><span class="o">{}</span>
-<span class="k">val</span> <span class="n">ohBar</span> <span class="k">=</span> <span class="k">new</span> <span class="n">oh</span><span class="o">.</span><span class="nc">Bar</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span>
-
-<span class="n">foo.use(fooBar)</span>
-						</pre>
-					</section>
-					<section>
-						<h4>Abstract Types</h4>
+						<h3>What do They Look Like?</h3>
 						<pre>
 <span class="k">trait</span> <span class="nc">Foo</span><span class="o">{</span>
   <span class="k">type</span> <span class="kt">Bar</span>
 
-  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Bar</span>
+  <span class="k">val</span> <span class="n">value</span><span class="k">:</span> <span class="kt">Bar</span>
 <span class="o">}</span>
+						</pre>
+						<p>The type returned depends on the argument.</p>
+						<pre>
+<span class="k">def</span> <span class="n">bar</span><span class="o">(</span><span class="n">foo</span><span class="k">:</span> <span class="kt">Foo</span><span class="o">)</span><span class="k">:</span> <span class="kt">foo.Bar</span> = foo.value
 						</pre>
 					</section>
 					<section>
-						<pre>
-<span class="k">def</span> <span class="n">bar</span><span class="o">(</span><span class="n">foo</span><span class="k">:</span> <span class="kt">Foo</span><span class="o">)</span><span class="k">:</span> <span class="kt">foo.Bar</span>
-						</pre>
+						something
 					</section>
 				</section>
 				<section>
 					<section>
-						<h3>Standard Library</h3>
+						Outline of idea for this section (idea is type polution)
+						<ol>
+							<li>where they exist in std lib: IsTraversableLike</li>
+							<li>where they don't: List.flatten</li>
+							<li>Show why bad, i.e. how type polution happens ->> def foo(List[A])(implicit as: A => GenTraversable[A, B]) ={ bar(myList, _.flatten).size }</li>
+							<li>Show alternative</li>
+							<li>Come up with type safe conversion and how to define</li>
+						</ol>
 					</section>
 					<section>
+						<h3>A tale of two implementations</h3>
+						<blockquote>There can't be bees - nobody ever saw bees a mile off, you know - Alice</blockquote>
+					</section>
+					<section>
+						<h3>flatSize</h3>
+						<pre>
+<span class="k">implicit</span> <span class="k">class</span> <span class="nc">ListOps</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">l</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">A</span><span class="o">]){</span>
+  <span class="k">def</span> <span class="n">flatSize</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">flatten</span><span class="o">.</span><span class="n">size</span>
+<span class="o">}</span>
+						</pre>
+					</section>
+					<section>
+						<h3>Problem</h3>
+						<pre>
+
+error: No implicit view available from A => scala.collection.GenTraversableOnce[B].
+def flatSize = l.flatten.size
+                 ^
+						</pre>
+						<p>Aren't problems good?</p>
+					</section>
+					<section>
+						<h3>flatten</h3>
+						<pre>
+<span class="k">def</span> <span class="n">flatten</span><span class="o">[</span><span class="kt">B</span><span class="o">](</span><span class="k">implicit</span> <span class="n">asTraversable</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="nc">GenTraversableOnce</span><span class="o">[</span><span class="kt">B</span><span class="o">])</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">B</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="n">b</span> <span class="k">=</span> <span class="n">genericBuilder</span><span class="o">[</span><span class="kt">B</span><span class="o">]</span>
+  <span class="k">for</span> <span class="o">(</span><span class="n">xs</span> <span class="k">&lt;-</span> <span class="n">sequential</span><span class="o">)</span>
+    <span class="n">b</span> <span class="o">++=</span> <span class="n">asTraversable</span><span class="o">(</span><span class="n">xs</span><span class="o">).</span><span class="n">seq</span>
+  <span class="n">b</span><span class="o">.</span><span class="n">result</span><span class="o">()</span>
+<span class="o">}</span>
+						</pre>
+					</section>
+					<section>
+						<h3>Real World</h3>
+						<pre>
+
+<span class="k">implicit</span> <span class="k">class</span> <span class="nc">ListOps</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">l</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">A</span><span class="o">]){</span>
+  <span class="k">def</span> <span class="n">flatSize</span><span class="o">[</span><span class="kt">B</span><span class="o">]
+    <span class="o">(</span><span class="k">implicit</span> <span class="n">ast</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="nc">GenTraversableOnce</span><span class="o">[</span><span class="kt">B</span><span class="o">])</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> 
+      <span class="n">l</span><span class="o">.</span><span class="n">flatten</span><span class="o">.</span><span class="n">size</span>
+<span class="o">}</span>
+						</pre>
+						<p>
+								<code>def flatSize[B]: Int</code>
+						</p>
+					</section>
+					<section>
+						<h3>In Wonderland</h3>
+						<pre>
+
+<span class="k">def</span> <span class="n">flatten</span><span class="o">(</span><span class="k">implicit</span> <span class="n">itl</span><span class="k">:</span> <span class="kt">IsTraversableLike</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">itl.A</span><span class="o">]</span> <span class="o">={</span>
+  <span class="k">val</span> <span class="n">b</span> <span class="k">=</span> <span class="n">genericBuilder</span><span class="o">[</span><span class="kt">itl.A</span><span class="o">]</span>
+  <span class="k">for</span> <span class="o">(</span><span class="n">xs</span> <span class="k">&lt;-</span> <span class="n">sequential</span><span class="o">)</span>
+    <span class="n">b</span> <span class="o">++=</span> <span class="n">itl</span><span class="o">.</span><span class="n">conversion</span><span class="o">(</span><span class="n">xs</span><span class="o">).</span><span class="n">seq</span>
+  <span class="n">b</span><span class="o">.</span><span class="n">result</span><span class="o">()</span>
+<span class="o">}</span>
+						</pre>
+						<p>found in Scala itself</p>
 						<pre>
 <span class="k">trait</span> <span class="nc">IsTraversableLike</span><span class="o">[</span><span class="kt">Repr</span><span class="o">]{</span>
   <span class="k">type</span> <span class="kt">A</span>
-  <span class="k">def</span> <span class="n">conversion</span><span class="o">(</span><span class="n">repr</span><span class="k">:</span> <span class="kt">Repr</span><span class="o">)</span><span class="k">:</span> <span class="kt">GenTraversableLike</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">Repr</span><span class="o">]</span>
+
+  <span class="k">abstract val</span> <span class="n">conversion</span><span class="k">:</span> <span class="kt">Repr</span><span class="k"> =&gt<span class="kt">GenTraversableLike</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">Repr</span><span class="o">]</span>
 <span class="o">}</span>
 						</pre>
 					</section>
-					<section></section>
+					<section>
+						<h3>In Wonderland</h3>
+						<pre>
+<span class="k">implicit</span> <span class="k">class</span> <span class="nc">ListOps</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">l</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">A</span><span class="o">]){</span>
+  <span class="k">def</span> <span class="n">flatSize</span><span class="o">(</span><span class="k">implicit</span> <span class="n">itl</span><span class="k">:</span> <span class="kt">IsTraversableLike</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span>
+    <span class="n">l</span><span class="o">.</span><span class="n">flatten</span><span class="o">.</span><span class="n">size</span>
+<span class="o">}</span>
+						</pre>
+						<p>
+								<code>def flatSize: Int</code>
+						</p>
+					</section>
+					<section>
+						<h3>Type Discovery</h3>
+						<pre>
+<span class="k">trait</span> <span class="nc">IsMyType</span><span class="o">[</span><span class="kt">MA</span><span class="o">]{</span>
+  <span class="k">type</span> <span class="kt">A</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">ma</span><span class="k">:</span> <span class="kt">MA</span><span class="o">)</span><span class="k">:</span> <span class="kt">SomeType</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span>
+<span class="o">}</span>
+
+<span class="k">implicit</span> <span class="k">def</span> <span class="n">isMT</span><span class="o">[</span><span class="kt">A0</span><span class="o">]</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">IsMyType</span><span class="o">[</span><span class="kt">SomeType</span><span class="o">[</span><span class="kt">A0</span><span class="o">]]{</span>
+  <span class="k">type</span> <span class="kt">A</span> <span class="o">=</span> <span class="n">A0</span>
+
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">ma</span><span class="k">:</span> <span class="kt">SomeType</span><span class="o">[</span><span class="kt">A0</span><span class="o">])</span> <span class="k">=</span> <span class="n">ma</span>
+<span class="o">}</span>
+						</pre>
+						<p>compile time psuedo-type reification</p>
+					</section>
 				</section>
 				<section>
 					<section>
-						<h2>Functions</h2>
-						<p>You always know what's going in</p>
-						<pre>
-<span class="k">trait</span> <span class="nc">Function1</span><span class="o">[</span><span class="kt">-In</span>, <span class="kt">+Out</span><span class="o">]</span>{</span>
-  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">In</span><span class="o">)</span><span class="k">:</span> <span class="kt">Out</span>
-<span class="o">}</span>
-						</pre>
-						<p>...and what's coming out.</p>
+						outline (idea is stopping List[List[A]])
+						<ol>
+							<li>Talk about the signatures of map and flatMap with real functions</li>
+							<li>Show what map and flatMap could look like using ideas from previous</li>
+							<li>Introduce Dependently Typed Function (essentially saw in IsTraversable)</li>
+							<li>Signature of Continuation and then straight into dependenlty typed one</li>
+							<li>Show map and flatMap defined in terms of "dmap" by taking it one step further</li>
+							<li>Talk about List[List[A]], List[List[List[List[A]]]] and StateMonad and such</li>
+						</ol>
 					</section>
 					<section>
-						<h3>Standard Library Version</h3>
-						<pre>
-<span class="k">trait</span> <span class="nc">Function1</span><span class="o">[</span><span class="kt">-T1</span>, <span class="kt">+R</span><span class="o">]</span> <span class="nc">extends</span> <span class="nc">AnyRef</span> <span class="o">{</span> <span class="n">self</span> <span class="k">=&gt;</span>
-
-  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">v1</span><span class="k">:</span> <span class="kt">T1</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span>
-
-  <span class="k">def</span> <span class="n">andThen</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">g</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=&gt;</span> <span class="n">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">T1</span> <span class="o">=&gt;</span> <span class="n">A</span> <span class="k">=</span> <span class="o">{</span> <span class="n">x</span> <span class="k">=&gt;</span> <span class="n">g</span><span class="o">(</span><span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="o">))</span> <span class="o">}</span>
-
-  <span class="k">def</span> <span class="n">compose</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">g</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">T1</span><span class="o">)</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">R</span> <span class="k">=</span> <span class="n">g</span> <span class="n">andThen</span> <span class="n">self</span>
-
-  <span class="k">override</span> <span class="k">def</span> <span class="n">toString</span><span class="o">()</span> <span class="k">=</span> <span class="s">&quot;&lt;function1&gt;&quot;</span>
-<span class="o">}</span>
-						</pre>
-					</section>
-					<section>
-						<h3>Context is Everything</h3>
+						<h3>Some Title</h3>
 						<pre>
 
 <span class="k">def</span> <span class="n">map</span><span class="o">[</span><span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)</span><span class="k">:</span> <span class="kt">M[B]</span>
 
 <span class="k">def</span> <span class="n">flatMap</span><span class="o">[</span><span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">M[B]</span><span class="o">)</span><span class="k">:</span> <span class="kt">M[B]</span>
 						</pre>
-						<p>They make you declare your types before using them.</p>
-					</section>
-					<section>
-						<h3>In Wonderland</h3>
-						<pre>
-<span class="k">trait</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">-T</span><span class="o">]</span> <span class="o">{</span> <span class="n">self</span> <span class="k">=&gt;</span>
-  <span class="k">type</span> <span class="kt">R</span>
-
-  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span>
-<span class="o">}</span>
-						</pre>
-						<p>What an odd world we've stepped into.</p>
+						<p>so why flatMap</p>
 						<pre>
 
-<span class="k">def</span> <span class="n">map</span>(</span><span class="n">f</span><span class="k">:</span> <span class="kt">DepFun1[A]</span><span class="o">)</span><span class="k">:</span> <span class="kt">M[f.R]</span>
-
-<span class="k">def</span> <span class="n">flatMap</span><span class="o">(</span><span class="n">f</span><span class="k">:</span> <span class="kt">DepFun1[A]</span><span class="o">)</span><span class="k">:</span> <span class="kt">M[???]</span>
-						</pre>
-					</section>
-					<section>
-						<h3>Dependently Typed Function</h3>
-						<pre>
-<span class="k">trait</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">-T</span><span class="o">]</span> <span class="nc">extends</span> <span class="nc">AnyRef</span> <span class="o">{</span> <span class="n">self</span> <span class="k">=&gt;</span>
-  <span class="k">type</span> <span class="kt">R</span>
-
-  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span>
-
-  <span class="k">def</span> <span class="n">andThen</span><span class="o">(</span><span class="n">dep</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">R</span><span class="o">])</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">T</span><span class="o">]</span> <span class="o">{</span>
-    <span class="k">type</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">dep</span><span class="o">.</span><span class="n">R</span>
-
-    <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span><span class="k">:</span> <span class="kt">dep.R</span> <span class="o">=</span> <span class="n">dep</span><span class="o">(</span><span class="n">self</span><span class="o">(</span><span class="n">x</span><span class="o">))</span>
-  <span class="o">}</span>
-
-  <span class="k">override</span> <span class="k">def</span> <span class="n">toString</span><span class="o">()</span> <span class="k">=</span> <span class="s">&quot;&lt;function1&gt;&quot;</span>
-<span class="o">}</span>
-						</pre>
-						<p>*we will revisit compose later</p>
-					</section>
-				</section>
-				<section>
-					<section>
-						<h3>Bind our Types</h3>
-						<pre>
-
-<span class="k">def</span> <span class="n">flatMap</span><span class="o">(</span><span class="n">f</span><span class="k">:</span> <span class="kt">DepFun1[A]</span><span class="o">)</span><span class="k">:</span> <span class="kt">M[???]</span>
-						</pre>
-						<p>How do we place type constraints on a type we can't directly access?</p>
-					</section>
-					<section>
-						<h3>Ideas From Scala Itself</h3>
-						<pre>
-<span class="k">trait</span> <span class="nc">IsTraversableLike</span><span class="o">[</span><span class="kt">Repr</span><span class="o">]{</span>
-  <span class="k">type</span> <span class="kt">A</span>
-
-  <span class="k">def</span> <span class="n">conversion</span><span class="o">(</span><span class="n">repr</span><span class="k">:</span> <span class="kt">Repr</span><span class="o">)</span><span class="k">:</span> <span class="kt">GenTraversableLike</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">Repr</span><span class="o">]</span>
+<span class="n">opt</span> <span class="n">map</span> <span class="n">f</span> <span class="k">match</span><span class="o">{</span>
+  <span class="k">case</span> <span class="nc">None</span> <span class="k">=&gt;</span> <span class="c1">//...code</span>
+  <span class="k">case</span> <span class="nc">Some</span><span class="o">(</span><span class="nc">Some</span><span class="o">(</span><span class="n">x</span><span class="o">))</span> <span class="k">=&gt;</span> <span class="c1">//...code</span>
+  <span class="k">case</span> <span class="nc">Some</span><span class="o">(</span><span class="nc">None</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="c1">//...!?</span>
 <span class="o">}</span>
 						</pre>
 					</section>
 					<section>
-						<h3>Typesafe Conversion</h3>
+						<h3>Title</h3>
 						<pre>
 
-<span class="k">trait</span> <span class="nc">IsFuture</span><span class="o">[</span><span class="kt">FA</span><span class="o">]{</span>
-  <span class="k">type</span> <span class="kt">A</span>
+<span class="k">def</span> <span class="n">map</span><span class="o">[</span><span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)</span><span class="k">:</span> <span class="kt">M</span><span class="o">[</span><span class="kt">B</span><span class="o">]</span>
 
-  <span class="k">def</span> <span class="n">from</span><span class="o">(</span><span class="n">ma</span><span class="k">:</span> <span class="kt">FA</span><span class="o">)</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span>
-  <span class="k">def</span> <span class="n">to</span><span class="o">(</span><span class="n">ma</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span><span class="k">:</span> <span class="kt">FA</span>
-<span class="o">}</span>
+<span class="k">def</span> <span class="n">flatMap</span><span class="o">[</span><span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">ism</span><span class="k">:</span> <span class="kt">IsM</span><span class="o">[</span><span class="kt">B</span><span class="o">])</span><span class="k">:</span> <span class="kt">M</span><span class="o">[</span><span class="kt">ism.A</span><span class="o">]</span>
 						</pre>
-						<p>Also a compile time guard</p>
-					</section>
-					<section>
-						<h3>Why Dependent Types?</h3>
+						<p>but on the other side of the mirror...</p>
 						<pre>
+<span class="k">def</span> <span class="n">map</span><span class="o">[</span><span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">T</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">tie</span><span class="k">:</span> <span class="kt">Tie</span><span class="o">[</span><span class="kt">B</span><span class="o">])</span><span class="k">:</span> <span class="kt">M</span><span class="o">[</span><span class="kt">tie.A</span><span class="o">]</span> <span class="k">=</span> 
+  <span class="n">dmap</span><span class="o">(</span><span class="n">f</span><span class="o">)(</span><span class="n">tie</span><span class="o">)</span>
 
-<span class="k">trait</span> <span class="nc">IsTraversableLike</span><span class="o">[</span><span class="kt">Repr</span>, <span class="kt">A</span><span class="o">]{</span>
-  <span class="k">def</span> <span class="n">conversion</span><span class="o">(</span><span class="n">repr</span><span class="k">:</span> <span class="kt">Repr</span><span class="o">)</span><span class="k">:</span> <span class="kt">GenTraversableLike</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">Repr</span><span class="o">]</span>
-<span class="o">}</span>
+<span class="k">def</span> <span class="n">flatMap</span><span class="o">[</span><span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">T</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">tie</span><span class="k">:</span> <span class="kt">Tie</span><span class="o">[</span><span class="kt">B</span><span class="o">])</span><span class="k">:</span> <span class="kt">M</span><span class="o">[</span><span class="kt">tie.A</span><span class="o">]</span> <span class="k">=</span> 
+  <span class="n">dmap</span><span class="o">(</span><span class="n">f</span><span class="o">)(</span><span class="n">tie</span><span class="o">)</span>
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="o">[</span><span class="kt">T</span><span class="o">](</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">){</span>
-  <span class="k">def</span> <span class="n">magnitude</span><span class="o">[</span><span class="kt">A</span>](</span><span class="k">implicit</span> <span class="n">itl</span><span class="k">:</span> <span class="kt">IsTraversableLike</span><span class="o">[</span><span class="kt">T</span>, <span class="kt">A</span><span class="o">])</span> <span class="k">=</span> <span class="n">itl</span><span class="o">(</span><span class="n">x</span><span class="o">).</span><span class="n">size</span>
-<span class="o">}</span>
-						</pre>
-						<p>Talk about adding that type parameter and api design.</p>
-					</section>
-				</section>
-				<section>
-					<section>
-						<h3>Continuing On</h3>
-						<p>Ever seen a signature like this?</p>
-						<pre>
-
+<span class="k">def</span> <span class="n">dmap</span><span class="o">[</span><span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">T</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">tie</span><span class="k">:</span> <span class="kt">Tie</span><span class="o">[</span><span class="kt">B</span><span class="o">])</span><span class="k">:</span> <span class="kt">M</span><span class="o">[</span><span class="kt">tie.A</span><span class="o">]</span>
 						</pre>
 					</section>
 					<section>
@@ -229,101 +223,154 @@
 						</pre>
 					</section>
 					<section>
-						<h3>In Wonderland</h3>
-						<pre>
-
-						</pre>
-						<p>Things are a little different</p>
-					</section>
-					<section>
 						<h3>Title</h3>
 						<pre>
+<span class="k">trait</span> <span class="nc">Cont</span><span class="o">[</span><span class="kt">+T</span>, <span class="kt">R</span><span class="o">]{</span> <span class="n">self</span> <span class="k">=&gt;</span>
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">f</span><span class="k">:</span> <span class="kt">T</span> <span class="o">=&gt;</span> <span class="n">R</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span>
 
-<span class="k">trait</span> <span class="nc">DepCont</span><span class="o">[</span><span class="kt">T</span><span class="o">]</span> <span class="o">{</span> <span class="n">self</span> <span class="k">=&gt;</span>
-  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">dep</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">T</span><span class="o">])</span><span class="k">:</span> <span class="kt">dep.R</span>
+  <span class="k">def</span> <span class="n">map</span><span class="o">[</span><span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">T</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">tie</span><span class="k">:</span> <span class="kt">Tie</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">R</span><span class="o">])</span><span class="k">:</span> <span class="kt">Cont</span><span class="o">[</span><span class="kt">tie.In</span>, <span class="kt">R</span><span class="o">]</span> <span class="k">=</span>
+    <span class="n">dmap</span><span class="o">(</span><span class="n">f</span><span class="o">)(</span><span class="n">tie</span><span class="o">)</span>
 
-  <span class="k">def</span> <span class="n">map</span><span class="o">(</span><span class="n">f</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">T</span><span class="o">])(</span><span class="k">implicit</span> <span class="n">tie</span><span class="k">:</span> <span class="kt">Tie</span><span class="o">[</span><span class="kt">f.R</span><span class="o">])</span> <span class="k">=</span> <span class="n">dmap</span><span class="o">(</span><span class="n">f</span><span class="o">)(</span><span class="n">tie</span><span class="o">)</span>
+  <span class="k">def</span> <span class="n">flatMap</span><span class="o">[</span><span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">T</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">tie</span><span class="k">:</span> <span class="kt">Tie</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">R</span><span class="o">])</span><span class="k">:</span> <span class="kt">Cont</span><span class="o">[</span><span class="kt">tie.In</span>, <span class="kt">R</span><span class="o">]</span> <span class="k">=</span> 
+    <span class="n">dmap</span><span class="o">(</span><span class="n">f</span><span class="o">)(</span><span class="n">tie</span><span class="o">)</span>
 
-  <span class="k">def</span> <span class="n">flatMap</span><span class="o">(</span><span class="n">f</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">T</span><span class="o">])(</span><span class="k">implicit</span> <span class="n">tie</span><span class="k">:</span> <span class="kt">Tie</span><span class="o">[</span><span class="kt">f.R</span><span class="o">])</span> <span class="k">=</span> <span class="n">dmap</span><span class="o">(</span><span class="n">f</span><span class="o">)(</span><span class="n">tie</span><span class="o">)</span>
-
-  <span class="k">def</span> <span class="n">dmap</span><span class="o">(</span><span class="n">f</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">T</span><span class="o">])(</span><span class="k">implicit</span> <span class="n">tie</span><span class="k">:</span> <span class="kt">Tie</span><span class="o">[</span><span class="kt">f.R</span><span class="o">])</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">DepCont</span><span class="o">[</span><span class="kt">tie.In</span><span class="o">]{</span>
-    <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">dep</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">tie.In</span><span class="o">])</span><span class="k">:</span> <span class="kt">dep.R</span> <span class="o">=</span> <span class="n">self</span><span class="o">(</span><span class="k">new</span> <span class="nc">DepFun1</span><span class="o">[</span><span class="kt">T</span><span class="o">]{</span>
-      <span class="k">type</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">dep</span><span class="o">.</span><span class="n">R</span>
-
-      <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">T</span><span class="o">)</span> <span class="k">=</span> <span class="n">tie</span><span class="o">(</span><span class="n">f</span><span class="o">(</span><span class="n">x</span><span class="o">),</span> <span class="n">dep</span><span class="o">)</span>
-    <span class="o">})</span>
+  <span class="k">def</span> <span class="n">dmap</span><span class="o">[</span><span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">T</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">tie</span><span class="k">:</span> <span class="kt">Tie</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">R</span><span class="o">])</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Cont</span><span class="o">[</span><span class="kt">tie.In</span>, <span class="kt">R</span><span class="o">]{</span>
+    <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">g</span><span class="k">:</span> <span class="kt">tie.In</span> <span class="o">=&gt;</span> <span class="n">R</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">self</span><span class="o">(</span><span class="n">x</span> <span class="k">=&gt;</span> <span class="n">tie</span><span class="o">(</span><span class="n">f</span><span class="o">(</span><span class="n">x</span><span class="o">),</span> <span class="n">g</span><span class="o">))</span>
   <span class="o">}</span>
 <span class="o">}</span>
 						</pre>
 					</section>
 					<section>
-						<h3>Automatic Type</h3>
+						<h3>Title</h3>
 						<pre>
+<span class="k">trait</span> <span class="nc">Tie</span><span class="o">[</span><span class="kt">C</span>, <span class="kt">R</span><span class="o">]{</span>
+  <span class="k">type</span> <span class="kt">In</span>
 
-<span class="k">def</span> <span class="n">map</span><span class="o">(</span><span class="n">f</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">T</span><span class="o">])(</span><span class="k">implicit</span> <span class="n">tie</span><span class="k">:</span> <span class="kt">Tie</span><span class="o">[</span><span class="kt">f.R</span><span class="o">])</span><span class="k">:</span> <span class="kt">M</span><span class="o">[</span><span class="kt">tie.In</span><span class="o">]</span>
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">c</span><span class="k">:</span> <span class="kt">C</span><span class="o">,</span> <span class="n">f</span><span class="k">:</span> <span class="kt">In</span> <span class="o">=&gt;</span> <span class="n">R</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span>
+<span class="o">}</span>
+						</pre>
+					</section>
+					<section>
+						<h3>Title</h3>
+						<pre>
+<span class="k">object</span> <span class="nc">Tie</span> <span class="k">extends</span> <span class="nc">LowPriorityTie</span><span class="o">{</span>
+  <span class="k">def</span> <span class="n">apply</span><span class="o">[</span><span class="kt">C</span>, <span class="kt">R</span><span class="o">](</span><span class="k">implicit</span> <span class="n">tie</span><span class="k">:</span> <span class="kt">Tie</span><span class="o">[</span><span class="kt">C</span>, <span class="kt">R</span><span class="o">])</span><span class="k">:</span> <span class="kt">Aux</span><span class="o">[</span><span class="kt">C</span>, <span class="kt">R</span>, <span class="kt">tie.In</span><span class="o">]</span> <span class="k">=</span> <span class="n">tie</span>
 
-<span class="k">def</span> <span class="n">flatMap</span><span class="o">(</span><span class="n">f</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">T</span><span class="o">])(</span><span class="k">implicit</span> <span class="n">tie</span><span class="k">:</span> <span class="kt">Tie</span><span class="o">[</span><span class="kt">f.R</span><span class="o">])</span><span class="k">:</span> <span class="kt">M</span><span class="o">[</span><span class="kt">tie.In</span><span class="o">]</span>
+  <span class="k">implicit</span> <span class="k">def</span> <span class="n">tieFM</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">R</span><span class="o">]</span><span class="k">:</span> <span class="kt">Aux</span><span class="o">[</span><span class="kt">Cont</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">R</span><span class="o">]</span>, <span class="kt">R</span>, <span class="kt">B</span><span class="o">]</span> <span class="k">=</span>
+    <span class="k">new</span> <span class="nc">Tie</span><span class="o">[</span><span class="kt">Cont</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">R</span><span class="o">]]{</span>
+      <span class="k">type</span> <span class="kt">In</span> <span class="o">=</span> <span class="n">B</span>
+
+      <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">cont</span><span class="k">:</span> <span class="kt">Cont</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">R</span><span class="o">],</span> <span class="n">f</span><span class="k">:</span> <span class="kt">B</span> <span class="o">=&gt;</span> <span class="n">R</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">cont</span><span class="o">(</span><span class="n">f</span><span class="o">)</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="k">trait</span> <span class="nc">LowPriorityTie</span><span class="o">{</span>
+  <span class="k">type</span> <span class="kt">Aux</span><span class="o">[</span><span class="kt">C</span>, <span class="kt">R</span>, <span class="kt">In0</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Tie</span><span class="o">[</span><span class="kt">C</span>, <span class="kt">R</span><span class="o">]{</span> <span class="k">type</span> <span class="kt">In</span> <span class="o">=</span> <span class="nc">In0</span> <span class="o">}</span>
+
+  <span class="k">implicit</span> <span class="k">def</span> <span class="n">tieM</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">R</span><span class="o">]</span><span class="k">:</span> <span class="kt">Aux</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">R</span>, <span class="kt">B</span><span class="o">]</span> <span class="k">=</span>
+    <span class="k">new</span> <span class="nc">Tie</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">R</span><span class="o">]{</span>
+      <span class="k">type</span> <span class="kt">In</span> <span class="o">=</span> <span class="n">B</span>
+
+      <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">c</span><span class="k">:</span> <span class="kt">B</span><span class="o">,</span> <span class="n">f</span><span class="k">:</span> <span class="kt">B</span> <span class="o">=&gt;</span> <span class="n">R</span><span class="o">)</span><span class="k">:</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">f</span><span class="o">(</span><span class="n">c</span><span class="o">)</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+						</pre>
+					</section>
+					<section>
+						<h3>What Does it Mean?</h3>
+						<blockquote>"The rule is, jam tomorrow and jam yesterday – but never jam today." - the White Queen</blockquote>
+						no, this is the "title"
+					</section>
+					<section>
+						<h3>Title</h3>
+						<pre>
+<span class="nc">List</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">A</span><span class="o">]]</span>
+
+<span class="nc">List</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">A</span><span class="o">]]]]</span>
+
+<span class="nc">StateMonad</span><span class="o">[</span><span class="kt">S1</span>, <span class="kt">StateMonad</span><span class="o">[</span><span class="kt">S2</span>, <span class="kt">StateMonad</span><span class="o">[</span><span class="kt">S3</span>, <span class="kt">StateMonad</span><span class="o">[</span><span class="kt">S4</span>, <span class="kt">A</span><span class="o">]]]]</span>
 						</pre>
 					</section>
 				</section>
 				<section>
 					<section>
-						<h3>The Rules of "Tie"</h3>
+						outline - don't know if there's enough time to do this section but it's important
+						<ol>
+							<li>Talk about returning Future[Future[A]] from a function call, tie in with last section</li>
+							<li>Talk about returning Future[Try[A]] and show how can be stopped (also show pattern matching onComplete for why this is bad)</li>
+							<li>Show how to handle all the cases? Is there enough time?</li>
+						</ol>
+					</section>
+					<section>
+						<h3>Title</h3>
 						<pre>
 
-<span class="k">trait</span> <span class="nc">Tie</span><span class="o">[</span><span class="kt">R</span><span class="o">]{</span>
-  <span class="k">type</span> <span class="kt">In</span>
-
-  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">r</span><span class="k">:</span> <span class="kt">R</span><span class="o">,</span> <span class="n">f</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">In</span><span class="o">])</span><span class="k">:</span> <span class="kt">f.R</span>
+<span class="k">val</span> <span class="n">futfut</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Future</span><span class="o">[</span><span class="kt">Unit</span><span class="o">]]</span>
+<span class="k">val</span> <span class="n">futtry</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Try</span><span class="o">[</span><span class="kt">A</span><span class="o">]]</span>
+						</pre>
+						<p>TODO: "this is bad"</p>
+						<pre>
+<span class="n">futtry</span> <span class="n">onComplete</span><span class="o">{</span>
+  <span class="k">case</span> <span class="nc">Failure</span><span class="o">(</span><span class="n">ex</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="c1">//...</span>
+  <span class="k">case</span> <span class="nc">Success</span><span class="o">(</span><span class="nc">Success</span><span class="o">(</span><span class="n">x</span><span class="o">))</span> <span class="k">=&gt;</span> <span class="c1">//...</span>
+  <span class="k">case</span> <span class="nc">Sucess</span><span class="o">(</span><span class="nc">Failure</span><span class="o">(</span><span class="n">ex</span><span class="o">))</span> <span class="k">=&gt;</span> <span class="c1">//...!?</span>
 <span class="o">}</span>
 						</pre>
 					</section>
 					<section>
-						<h3>Defining</h3>
+						<h3>Title</h3>
 						<pre>
-<span class="k">object</span> <span class="nc">Tie</span> <span class="k">extends</span> <span class="nc">LowPriorityTie</span><span class="o">{</span>
-  <span class="k">def</span> <span class="n">apply</span><span class="o">[</span><span class="kt">R</span><span class="o">](</span><span class="k">implicit</span> <span class="n">tie</span><span class="k">:</span> <span class="kt">Tie</span><span class="o">[</span><span class="kt">R</span><span class="o">])</span><span class="k">:</span> <span class="kt">Aux</span><span class="o">[</span><span class="kt">R</span>, <span class="kt">tie.In</span><span class="o">]</span> <span class="k">=</span> <span class="n">tie</span>
 
-  <span class="k">implicit</span> <span class="k">def</span> <span class="n">tieFM</span><span class="o">[</span><span class="kt">R</span><span class="o">]</span><span class="k">:</span> <span class="kt">Aux</span><span class="o">[</span><span class="kt">DepCont</span><span class="o">[</span><span class="kt">R</span><span class="o">]</span>, <span class="kt">R</span><span class="o">]</span> <span class="k">=</span>
-    <span class="k">new</span> <span class="nc">Tie</span><span class="o">[</span><span class="kt">DepCont</span><span class="o">[</span><span class="kt">R</span><span class="o">]]{</span>
-      <span class="k">type</span> <span class="kt">In</span> <span class="o">=</span> <span class="n">R</span>
+<span class="k">def</span> <span class="n">yourMethod</span><span class="o">(</span><span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">B</span><span class="o">]</span>
+						</pre>
+						<p>change it up</p>
+						<pre>
 
-      <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">r</span><span class="k">:</span> <span class="kt">DepCont</span><span class="o">[</span><span class="kt">R</span><span class="o">],</span> <span class="n">f</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">R</span><span class="o">])</span><span class="k">:</span> <span class="kt">f.R</span> <span class="o">=</span> <span class="n">r</span><span class="o">(</span><span class="n">f</span><span class="o">)</span>
-    <span class="o">}</span>
-<span class="o">}</span>
+<span class="k">def</span> <span class="n">yourMethod</span><span class="o">(</span><span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">knot</span><span class="k">:</span> <span class="kt">Knot</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">B</span><span class="o">])</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">knot.R</span><span class="o">]</span>
 
-<span class="k">trait</span> <span class="nc">LowPriorityTie</span><span class="o">{</span>
-  <span class="k">type</span> <span class="kt">Aux</span><span class="o">[</span><span class="kt">R</span>, <span class="kt">In0</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Tie</span><span class="o">[</span><span class="kt">R</span><span class="o">]{</span> <span class="k">type</span> <span class="kt">In</span> <span class="o">=</span> <span class="nc">In0</span> <span class="o">}</span>
+<span class="k">trait</span> <span class="nc">Knot</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">FA</span><span class="o">]{</span>
+  <span class="k">type</span> <span class="kt">R</span>
 
-  <span class="k">implicit</span> <span class="k">def</span> <span class="n">tieF</span><span class="o">[</span><span class="kt">R</span><span class="o">]</span><span class="k">:</span> <span class="kt">Aux</span><span class="o">[</span><span class="kt">R</span>, <span class="kt">R</span><span class="o">]</span> <span class="k">=</span>
-    <span class="k">new</span> <span class="nc">Tie</span><span class="o">[</span><span class="kt">R</span><span class="o">]{</span>
-      <span class="k">type</span> <span class="kt">In</span> <span class="o">=</span> <span class="n">R</span>
-
-      <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">r</span><span class="k">:</span> <span class="kt">R</span><span class="o">,</span> <span class="n">f</span><span class="k">:</span> <span class="kt">DepFun1</span><span class="o">[</span><span class="kt">R</span><span class="o">])</span><span class="k">:</span> <span class="kt">f.R</span> <span class="o">=</span> <span class="n">f</span><span class="o">(</span><span class="n">r</span><span class="o">)</span>
-    <span class="o">}</span>
+  <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">in</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">A</span><span class="o">],</span> <span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="nc">FA</span><span class="err">]</span><span class="o">)</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">R</span><span class="o">]</span>
 <span class="o">}</span>
 						</pre>
 					</section>
 					<section>
-						<h3>Question</h3>
+						<h3>Title</h3>
 						<pre>
-<span class="nc">List</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">A</span><span class="o">]]</span>
 
-						</pre>
-						<pre class="fragment">
-<span class="nc">List</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">A</span><span class="o">]]]]</span>
+<span class="k">object</span> <span class="nc">Knot</span> <span class="k">extends</span> <span class="nc">LowPriorityKnot</span><span class="o">{</span>
+  <span class="k">def</span> <span class="n">apply</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">FA</span><span class="o">](</span><span class="k">implicit</span> <span class="n">knot</span><span class="k">:</span> <span class="kt">Knot</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">FA</span><span class="o">])</span><span class="k">:</span> <span class="kt">Aux</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">FA</span>, <span class="kt">knot.R</span><span class="o">]</span> <span class="k">=</span> <span class="n">knot</span>
 
-						</pre>
-						<pre class="fragment">
-<span class="nc">StateMonad</span><span class="o">[</span><span class="kt">S</span>, <span class="kt">A</span><span class="o">]</span>
+  <span class="k">implicit</span> <span class="k">def</span> <span class="n">fut</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">A0</span><span class="o">]</span>
+    <span class="o">(</span><span class="k">implicit</span> <span class="n">ex</span><span class="k">:</span> <span class="kt">ExecutionContext</span><span class="o">)</span><span class="k">:</span> <span class="kt">Aux</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">Future</span><span class="o">[</span><span class="kt">A0</span><span class="o">]</span>, <span class="kt">A0</span><span class="o">]</span> <span class="k">=</span>
+      <span class="k">new</span> <span class="nc">Knot</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">Future</span><span class="o">[</span><span class="kt">A0</span><span class="o">]]{</span>
+        <span class="k">type</span> <span class="kt">A</span> <span class="o">=</span> <span class="n">A0</span>
 
-						</pre>
-						<pre class="fragment">
-<span class="nc">StateMonad</span><span class="o">[</span><span class="kt">S1</span>, <span class="kt">StateMonad</span><span class="o">[</span><span class="kt">S2</span>, <span class="kt">StateMonad</span><span class="o">[</span><span class="kt">S3</span>, <span class="kt">StateMonad</span><span class="o">[</span><span class="kt">S4</span>, <span class="kt">A</span><span class="o">]]]]</span>
+        <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">in</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">A</span><span class="o">],</span> <span class="n">fa</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="nc">Future</span><span class="o">[</span><span class="kt">A0</span><span class="o">])</span> <span class="k">=</span> <span class="n">in</span> <span class="n">flatMap</span> <span class="n">fa</span>
+      <span class="o">}</span>
+
+  <span class="k">implicit</span> <span class="k">def</span> <span class="k">try</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">A0</span><span class="o">]</span>
+    <span class="o">(</span><span class="k">implicit</span> <span class="n">ex</span><span class="k">:</span> <span class="kt">ExecutionContext</span><span class="o">)</span><span class="k">:</span> <span class="kt">Aux</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">Try</span><span class="o">[</span><span class="kt">A0</span><span class="o">]</span>, <span class="kt">A0</span><span class="o">]</span> <span class="k">=</span>
+      <span class="k">new</span> <span class="nc">Knot</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">Try</span><span class="o">[</span><span class="kt">A0</span><span class="o">]]{</span>
+        <span class="k">type</span> <span class="kt">R</span> <span class="o">=</span> <span class="n">A0</span>
+
+        <span class="k">def</span> <span class="n">apply</span><span class="o">(</span><span class="n">in</span><span class="k">:</span> <span class="kt">Futurte</span><span class="o">[</span><span class="kt">A</span><span class="o">],</span> <span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="nc">Try</span><span class="o">[</span><span class="kt">A0</span><span class="o">])</span> <span class="k">=</span> <span class="n">in</span> <span class="n">flatMap</span> <span class="o">{</span> <span class="n">x</span> <span class="k">=&gt;</span> 
+          <span class="n">f</span><span class="o">(</span><span class="n">x</span><span class="o">)</span> <span class="k">match</span><span class="o">{</span>
+            <span class="k">case</span> <span class="nc">Success</span><span class="o">(</span><span class="n">x</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nc">Future</span> <span class="n">successful</span> <span class="n">x</span>
+            <span class="k">case</span> <span class="nc">Failure</span><span class="o">(</span><span class="n">ex</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nc">Future</span> <span class="n">failed</span> <span class="n">ex</span>
+          <span class="o">}</span>
+        <span class="o">}</span>
+      <span class="o">}</span>
+<span class="o">}</span>
 						</pre>
 					</section>
 				</section>
-				<section></section>
+				<section>
+						<p>...the Queen said. "The rule is, jam to-morrow and jam yesterday – but never jam to-day."</p>
+						<p>"It must come sometimes to 'jam to-day'," Alice objected.</p>
+						<p>"No, it can't," said the Queen.</p>
+				</section>
 			</div>
 
 			<div style="position: fixed; display: block; left: 10px; bottom: 10px">
