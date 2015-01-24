@@ -21,6 +21,12 @@ trait Foo[-T, +R]{
   def apply(x: T): R
 }
 
+def foo[T](that: T)(implicit bar: Bar[T]): bar.R
+
+def foo(that: That)(implicit ord: Ordering[that.R])
+
+//functions
+
 trait Function1[-T1, +R] extends AnyRef { self =>
 
   def apply(v1: T1): R
@@ -312,10 +318,18 @@ trait LowPriorityTie{
     }
 }
 
+def dmap[B](f: T => B)(implicit tie: Tie[B, R]) = new Cont[tie.In, R]{
+  def apply(g: tie.In => R): R = self(x => tie(f(x), g))
+}
+
+def apply(c: Cont[B, R], f: B => R): R = r(f)
+
+def apply(c: B, f: B => R): R = f(c)
+
 //final discussion
 
-val futfut: Future[Future[Unit]]
-val futtry: Future[Try[A]]
+val futfut: Future[Future[Unit]] = yourMethod(f)
+val futtry: Future[Try[A]] = yourMethod(t)
 
 futtry onComplete{
   case Failure(ex) => //...
@@ -323,33 +337,33 @@ futtry onComplete{
   case Sucess(Failure(ex)) => //...!?
 }
 
-def yourMethod(f: A => B): Future[B]
+def yourMethod[B](f: A => B): Future[B]
 
-def yourMethod(f: A => B)(implicit knot: Knot[A, B]): Future[knot.R]
+def yourMethod[B](f: A => B)(implicit knot: Knot[B]): Future[knot.R]
 
-trait Knot[A, FA]{
+trait Knot[FA]{
   type R
 
-  def apply(in: Future[A], f: A => FA]): Future[R]
+  def apply[A](in: Future[A], f: A => FA]): Future[R]
 }
 
 object Knot extends LowPriorityKnot{
-  def apply[A, FA](implicit knot: Knot[A, FA]): Aux[A, FA, knot.R] = knot
+  def apply[FA](implicit knot: Knot[FA]): Aux[FA, knot.R] = knot
 
-  implicit def fut[A, A0]
-    (implicit ex: ExecutionContext): Aux[A, Future[A0], A0] =
-      new Knot[A, Future[A0]]{
-        type A = A0
+  implicit def futFM[B]
+    (implicit ex: ExecutionContext): Aux[Future[B], B] =
+      new Knot[Future[B]]{
+        type R = B
 
-        def apply(in: Future[A], fa: A => Future[A0]) = in flatMap fa
+        def apply[A](in: Future[A], fa: A => Future[B]) = in flatMap fa
       }
 
-  implicit def try[A, A0]
-    (implicit ex: ExecutionContext): Aux[A, Try[A0], A0] =
-      new Knot[A, Try[A0]]{
-        type R = A0
+  implicit def tryM[B]
+    (implicit ex: ExecutionContext): Aux[Try[B], B] =
+      new Knot[Try[B]]{
+        type R = B
 
-        def apply(in: Futurte[A], f: A => Try[A0]) = in flatMap { x => 
+        def apply[A](in: Futurte[A], f: A => Try[B]) = in flatMap { x => 
           f(x) match{
             case Success(x) => Future successful x
             case Failure(ex) => Future failed ex
