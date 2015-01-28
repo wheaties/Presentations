@@ -363,7 +363,7 @@ object Knot extends LowPriorityKnot{
       new Knot[Try[B]]{
         type R = B
 
-        def apply[A](in: Futurte[A], f: A => Try[B]) = in flatMap { x => 
+        def apply[A](in: Future[A], f: A => Try[B]) = in flatMap { x => 
           f(x) match{
             case Success(x) => Future successful x
             case Failure(ex) => Future failed ex
