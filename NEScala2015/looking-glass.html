@@ -364,7 +364,7 @@ def flatSize = l.flatten.size
 			</div>
 
 			<div style="position: fixed; display: block; left: 10px; bottom: 10px">
-				<img src="../Scala-Dep-Types/MediaMath_Logo_Border_CMYK_notagline.png">
+				<img id="mm-tag" src="../Scala-Dep-Types/MediaMath_Logo_Border_CMYK_notagline.png">
 			</div>
 
 		</div>
@@ -402,9 +402,16 @@ def flatSize = l.flatten.size
 						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/markdown/markdown.js', 
 						condition: function() { return !!document.querySelector( '[data-markdown]' ); } 
 					}*/
-				]
-			});
+				],
+				keyboard:{
+					88: function(){
+						var elem = document.getElementById('mm-tag'),
+							indx = elem.className.indexOf('hidden');
 
+						indx ? elem.className = 'hidden' : elem.className = '';
+					}
+				}
+			});
 		</script>
 
 
