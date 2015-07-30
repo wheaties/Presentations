@@ -136,7 +136,7 @@ object IsFuture{
   implicit def mk[A] = new IsFuture[Future[A]]{
     type T = A
 
-    def apply(f: F): Future[A] = f
+    def apply(f: Future[A]): Future[A] = f
   }
 }
 						</code></pre>
