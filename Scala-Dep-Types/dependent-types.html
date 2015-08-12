@@ -136,7 +136,7 @@ object IsFuture{
   implicit def mk[A] = new IsFuture[Future[A]]{
     type T = A
 
-    def apply(f: F): Future[A] = f
+    def apply(f: Future[A]): Future[A] = f
   }
 }
 						</code></pre>
@@ -184,7 +184,7 @@ object Apart{
     type T = A
     type W[X] = F[X]
 
-    def apply(f: F): W[T] = f
+    def apply(f: F[A]): W[T] = f
   }
 }
 							</code></pre>
@@ -215,11 +215,11 @@ object Apart{
 
   type Aux[FA, A, F[_]] = Apart[FA]{ type T = A; type W[X] = F[X] }
 
-  implicit def mk[F[_], A] = new Apart[F[A]]{
+  implicit def mk[F[_], A]: Aux[F[A], A, F] = new Apart[F[A]]{
     type T = A
     type W[X] = F[X]
 
-    def apply(f: F): W[T] = f
+    def apply(f: F[A]): W[T] = f
   }
 }
 						</code></pre>
@@ -336,7 +336,9 @@ trait Unwrap[F]{
 object Unwrap extends LowPriorityUnwrap{
   def apply[F](implicit unwrap: Unwrap[F]) = unwrap
 
-  implicit def neseted[F[_], G](implicit unwrap: Unwrap[G]) =
+  type Aux[T, A] = Unwrap[T] { type Inner = A }
+
+  implicit def nested[F[_], G](implicit unwrap: Unwrap[G]) =
     new Unwrap[F[G]]{
       type Inner = unwrap.Inner
     }
@@ -353,7 +355,7 @@ trait LowPriorityUnwrap{
 						<h3>Take Two</h3>
 						<pre><code trim-data>
 def zero[T, A](t: T)(implicit unwrap: Unwrap.Aux[T, A], 
-                              m: Monoid[A]): inner.T = m.zero
+                              m: Monoid[A]): unwrap.Inner = m.zero
 
 val out = zero(Foo(Foo(1)))
 assert(out == 0)
