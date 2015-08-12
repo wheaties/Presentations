@@ -184,7 +184,7 @@ object Apart{
     type T = A
     type W[X] = F[X]
 
-    def apply(f: F): W[T] = f
+    def apply(f: F[A]): W[T] = f
   }
 }
 							</code></pre>
@@ -215,11 +215,11 @@ object Apart{
 
   type Aux[FA, A, F[_]] = Apart[FA]{ type T = A; type W[X] = F[X] }
 
-  implicit def mk[F[_], A] = new Apart[F[A]]{
+  implicit def mk[F[_], A]: Aux[F[A], A, F] = new Apart[F[A]]{
     type T = A
     type W[X] = F[X]
 
-    def apply(f: F): W[T] = f
+    def apply(f: F[A]): W[T] = f
   }
 }
 						</code></pre>
