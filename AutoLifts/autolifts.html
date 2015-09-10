@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+
+		<title>AutoLifts</title>
+
+		<meta name="description" content="AutoLifts: Automatic Type-Derived Lifting">
+		<meta name="author" content="Owein Reese">
+
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+
+		<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/css/reveal.min.css">
+		<link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/css/theme/sky.css" id="theme">
+		<link rel="stylesheet" href="../NEScala2015/scala.css">
+	</head>
+
+	<body>
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h2>AutoLifts</h2>
+					<h3>Automatic Type-Derived Lifting</h3>
+					<p>
+						<small><a href="https://twitter.com/OweinReese">@OweinReese</a></small>
+					</p>
+				</section>
+				<section>
+					<section>
+						<h3>Lifting</h3>
+						<img src="https://pixabay.com/static/uploads/photo/2014/11/08/00/40/weightlifting-521470_640.jpg"/>
+						<p>What is it?</p>
+					</section>
+					<section>
+						<p>We have a function</p>
+						<pre>
+
+							<span class="k">def</span> <span class="n">square</span><span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="n">x</span><span class="o">*</span><span class="n">x</span>
+						</pre>
+						<p>with signature <code>Int => Int</code></p>
+					</section>
+					<section>
+						<p>And we have an object</p>
+						<pre>
+
+							<span class="k">val</span> <span class="n">obj</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="mi">3</span><span class="o">)</span>
+						</pre>
+						<p>with signature <code>List[Int]</code></p>
+					</section>
+					<section>
+						<p>Incompatible? - bad, think better</p>
+						<pre>
+
+	<span class="k">val</span> <span class="n">squared</span> <span class="k">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">square</span><span class="o">)</span>
+						</pre>
+						<p>We have <code>map</code></p>
+					</section>
+					<section>
+						<p><code>map</code> on <code>Int => Int</code></p>
+						<pre>
+
+	<span class="k">def</span> <span class="n">lift</span><span class="o">(</span><span class="n">obj</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">])</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="k">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">f</span><span class="o">)</span>
+						</pre>
+						<p>and turns it into <code>List[Int] => List[Int]</code></p>
+					</section>
+					<section>
+						<h3>lift</h3>
+						<pre>
+<span class="k">def</span> <span class="n">lift</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)</span> <span class="k">=</span> <span class="k">new</span><span class="o">{</span>
+		<span class="k">def</span> <span class="n">apply</span><span class="o">[</span><span class="kt">F</span><span class="o">[</span><span class="k">_</span><span class="o">]](</span><span class="n">ma</span><span class="k">:</span> <span class="kt">F</span><span class="o">[</span><span class="kt">A</span><span class="o">])(</span><span class="k">implicit</span> <span class="n">fn</span><span class="k">:</span> <span class="kt">Functor</span><span class="o">[</span><span class="kt">F</span><span class="o">])</span> <span class="k">=</span> <span class="n">fn</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">ma</span><span class="o">)(</span><span class="n">f</span><span class="o">)</span>
+<span class="o">}</span></pre>
+hate
+					</section>
+				</section>
+				<section>
+					<section>
+						Transition to MonadTransformers by showing lift is boilerplate using Future[List[A]]? Need to code up
+						a real liftM2 to show we can recapture M[F[A]], M[F[B]], A => B => C composition, i.e. have our
+						cake and eat it too.
+					</section>
+					<section>
+						Tell what one is by showing Future[List[A]] doesn't compose in a for-comprehension
+						remind that is the problem they solve
+					</section>
+					<section>
+						Discuss how each one is its own little snow flake due to flatMap
+					</section>
+				</section>
+				<section>
+					<section>
+						Introduce syntax extensions or should we do lifting contexts?
+					</section>
+					<section>
+						Show how they work regardless of how nested a type is
+					</section>
+					<section>
+						Then introduce the converse (contexts or extensions)
+					</section>
+				</section>
+				<section>
+				</section>
+				<section>
+					<h3>Questions?</h3>
+				</section>
+			</div>
+
+			<div style="position: fixed; display: block; left: 10px; bottom: 10px">
+				<img id="mm-tag" src="../Scala-Dep-Types/MediaMath_Logo_Border_CMYK_notagline.png">
+			</div>
+
+		</div>
+
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/lib/js/head.min.js"></script>
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/js/reveal.min.js"></script>
+
+		<script>
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				history: true,
+				center: true,
+				overview: true,
+				touch: true,
+				theme: 'sky',
+				transition: 'slide', // none/fade/slide/convex/concave/zoom
+				minScale: 0.7,
+				maxScale: 1.0,
+
+				// Parallax scrolling
+				// parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+				// parallaxBackgroundSize: '2100px 900px',
+
+				dependencies: [
+					{ 
+						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/lib/js/classList.js', 
+						condition: function() { return !document.body.classList; } 
+					}/*,
+					{
+						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/markdown/marked.js', 
+						condition: function() { return !!document.querySelector( '[data-markdown]' ); } 
+					},
+					{ 
+						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/markdown/markdown.js', 
+						condition: function() { return !!document.querySelector( '[data-markdown]' ); } 
+					}*/
+				],
+				keyboard:{
+					88: function(){
+						var elem = document.getElementById('mm-tag'),
+							indx = elem.className.indexOf('hidden');
+
+						indx ? elem.className = 'hidden' : elem.className = '';
+					}
+				}
+			});
+		</script>
+
+
+	</body>
+</html>
