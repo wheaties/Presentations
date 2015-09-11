@@ -53,56 +53,440 @@
 						<p>with signature <code>List[Int]</code></p>
 					</section>
 					<section>
-						<p>Incompatible? - bad, think better</p>
+						With incompatible types.
 						<pre>
 
-	<span class="k">val</span> <span class="n">squared</span> <span class="k">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">square</span><span class="o">)</span>
+scala> square(List(1, 2, 3))
+error: type mismatch;
+ found   : List[Int]
+ required: Int
+              square(List(1,2,3))
+                    ^
 						</pre>
-						<p>We have <code>map</code></p>
+						<aside class="notes">
+							<ul>
+								<li>Types incompatible, duh</li>
+								<li>Would not approach it like this</li>
+								<li>People would just use <code>map</code></li>
+							</ul>
+						</aside>
 					</section>
 					<section>
 						<p><code>map</code> on <code>Int => Int</code></p>
 						<pre>
 
-	<span class="k">def</span> <span class="n">lift</span><span class="o">(</span><span class="n">obj</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">])</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="k">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">f</span><span class="o">)</span>
+	<span class="k">def</span> <span class="n">lift</span><span class="o">(</span><span class="n">obj</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">])</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="k">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">square</span><span class="o">)</span>
 						</pre>
-						<p>and turns it into <code>List[Int] => List[Int]</code></p>
+						<p>turns it into <code>List[Int] => List[Int]</code></p>
+						<aside class="notes">
+							<ul>
+								<li>In general would just call `map` directly</li>
+								<li>Don't think of this as "lifting," it is more general</li>
+								<li>Lists are Functors</li>
+							</ul>
+						</aside>
 					</section>
 					<section>
-						<h3>lift</h3>
+						<p>Generalized</p>
 						<pre>
-<span class="k">def</span> <span class="n">lift</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)</span> <span class="k">=</span> <span class="k">new</span><span class="o">{</span>
-		<span class="k">def</span> <span class="n">apply</span><span class="o">[</span><span class="kt">F</span><span class="o">[</span><span class="k">_</span><span class="o">]](</span><span class="n">ma</span><span class="k">:</span> <span class="kt">F</span><span class="o">[</span><span class="kt">A</span><span class="o">])(</span><span class="k">implicit</span> <span class="n">fn</span><span class="k">:</span> <span class="kt">Functor</span><span class="o">[</span><span class="kt">F</span><span class="o">])</span> <span class="k">=</span> <span class="n">fn</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">ma</span><span class="o">)(</span><span class="n">f</span><span class="o">)</span>
-<span class="o">}</span></pre>
-hate
+
+<span class="k">def</span> <span class="n">lift</span><span class="o">[</span><span class="kt">F</span><span class="o">[</span><span class="k">_</span><span class="o">]]</span> <span class="k">=</span> <span class="k">new</span><span class="o">{</span>
+	<span class="k">def</span> <span class="n">apply</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">fn</span><span class="k">:</span> <span class="kt">Functor</span><span class="o">[</span><span class="kt">F</span><span class="o">])</span> <span class="k">=</span> <span class="n">fn</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="k">_</span><span class="o">)(</span><span class="n">f</span><span class="o">)</span>
+<span class="o">}</span>
+
+<span class="k">val</span> <span class="n">listSquare</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="k">=&gt;</span> <span class="nc">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="k">=</span> <span class="n">lift</span><span class="o">[</span><span class="kt">List</span><span class="o">](</span><span class="n">square</span><span class="o">)</span>
+						</pre>
+						<aside class="notes">
+							<ul>
+								<li>Higher order function, takes in and returns a function. Function is transformed.</li>
+								<li>Return does not lose properties of original object. Gains context, only.</li>
+								<li>Explain Functor non-rigorously.</li>
+							</ul>
+						</aside>
 					</section>
 				</section>
 				<section>
 					<section>
-						Transition to MonadTransformers by showing lift is boilerplate using Future[List[A]]? Need to code up
-						a real liftM2 to show we can recapture M[F[A]], M[F[B]], A => B => C composition, i.e. have our
-						cake and eat it too.
+						<h3>Why Lift?</h3>
+						<img src="old_time_map.png" />
 					</section>
 					<section>
-						Tell what one is by showing Future[List[A]] doesn't compose in a for-comprehension
-						remind that is the problem they solve
+						<p>...when you can map?</p>
+						<pre>
+
+<span class="k">val</span> <span class="n">listOpt</span> <span class="k">=</span> <span class="nc">List</span><span class="o">(</span><span class="nc">Option</span><span class="o">(</span><span class="mi">1</span><span class="o">),</span> <span class="nc">None</span><span class="o">,</span> <span class="nc">Option</span><span class="o">(</span><span class="mi">3</span><span class="o">))</span>
+<span class="k">val</span> <span class="n">stuff</span> <span class="k">=</span> <span class="n">listOpt</span><span class="o">.</span><span class="n">map</span><span class="o">{</span>
+	<span class="k">_</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">square</span><span class="o">)</span>
+<span class="o">}</span>
+						</pre>
 					</section>
 					<section>
-						Discuss how each one is its own little snow flake due to flatMap
+						<p>and map</p>
+						<pre>
+
+<span class="k">val</span> <span class="n">flOpt</span> <span class="k">=</span> <span class="nc">Future</span><span class="o">{</span> <span class="nc">List</span><span class="o">(</span><span class="nc">Option</span><span class="o">(</span><span class="mi">1</span><span class="o">),</span> <span class="nc">None</span><span class="o">,</span> <span class="nc">Option</span><span class="o">(</span><span class="mi">3</span><span class="o">))</span> <span class="o">}</span>
+<span class="k">val</span> <span class="n">moreStuff</span> <span class="k">=</span> <span class="n">flOpt</span><span class="o">.</span><span class="n">map</span><span class="o">{</span> <span class="k">_</span><span class="o">.</span><span class="n">map</span><span class="o">{</span> <span class="k">_</span><span class="o">.</span><span class="n">map</span><span class="o">(</span><span class="n">square</span><span class="o">)</span> <span class="o">}</span> <span class="o">}</span>
+						</pre>
+					</section>
+					<section>
+						<p>and...</p>
+						<pre>
+
+<span class="k">val</span> <span class="n">rly</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Option</span><span class="o">[</span><span class="kt">Validation</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">]]]]</span> <span class="k">=</span> <span class="o">...</span>
+						</pre>
+						<aside class="notes">
+							<ul>
+								<li>Yes, compiler will catch if mistakes are made and a map level is missed.</li>
+								<li>Code starts to move to the "right" like jQuery spagetti.</li>
+								<li>Overhead of working with types gets in the way of the benefits the types give.</li>
+								<li>People will often use Natural Transformations to escape type stacks, just to avoid this.</li>
+								<li>May attempt to encode the missing types in the Future, via Failure and exceptions. <code>Future[List[Int]]</code> </li>
+								<li>Still have to handle without benefits of types.</li>
+								<li>All that info must be kept in head away from call site.</li>
+							</ul>
+						</aside>
+					</section>
+					<section>
+						<p>Slightly better</p>
+						<pre>
+
+<span class="k">val</span> <span class="n">yeah</span> <span class="k">=</span> <span class="n">liftM</span><span class="o">[</span><span class="kt">Future</span><span class="o">]</span> <span class="n">compose</span> 
+	<span class="n">liftM</span><span class="o">[</span><span class="kt">Option</span><span class="o">]</span> <span class="n">compose</span> 
+	<span class="n">liftM</span><span class="o">[</span><span class="kt">Validation</span><span class="o">]</span> <span class="n">compose</span> 
+	<span class="n">liftM</span><span class="o">[</span><span class="kt">List</span><span class="o">]</span><span class="o">(</span><span class="n">square</span><span class="o">)</span>
+
+<span class="k">val</span> <span class="n">orly</span> <span class="k">=</span> <span class="n">yeah</span><span class="o">(</span><span class="n">rly</span><span class="o">)</span>
+						</pre>
+						<p>'cause it's more concise</p>
+						<aside class="notes">
+							<ul>
+								<li>FP more concise.</li>
+								<li>Functional composition forms a ladder.</li>
+								<li>Talk about being explicit with intentions and how this reflects that.</li>
+								<li>Mention how it removes the "stairs" or "side-ways pyramid" and essentially the "noise" of repeated map.</li>
+								<li>Note will explain why "liftM" later.</li>
+							</ul>
+						</aside>
 					</section>
 				</section>
 				<section>
 					<section>
-						Introduce syntax extensions or should we do lifting contexts?
+						<h3>Push Button</h3>
+						<img src="elevator_gears_small.jpg" />
+						<h3>Solutions</h3>
+						<aside class="notes">
+							<p>The big sell</p>
+							<ul>
+								<li>Ask if they prefer tools easier to use or easier for someone else to build?</li>
+								<li>Do the stairs vs elevator analogy</li>
+								<li>State they prefer easy to use.</li>
+								<li>Examples: push button deploys, continuous integration w/ repo pushes, etc.</li>
+							</ul>
+						</aside>
 					</section>
 					<section>
-						Show how they work regardless of how nested a type is
+						<p>Clean interface</p>
+						<pre>
+
+<span class="k">val</span> <span class="n">srlsly</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">Option</span><span class="o">[</span><span class="kt">Validation</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">]]]]</span> <span class="k">=</span> <span class="o">...</span>
+
+<span class="k">val</span> <span class="n">yupRly</span> <span class="k">=</span> <span class="n">srlsly</span><span class="o">.</span><span class="n">liftMap</span><span class="o">(</span><span class="n">square</span><span class="o">)</span>
+
+<span class="n">whenReady</span><span class="o">(</span><span class="n">yupRly</span><span class="o">){</span> <span class="n">value</span> <span class="k">=&gt;</span>
+	<span class="n">same</span><span class="o">[</span><span class="kt">Option</span><span class="o">[</span><span class="kt">Validation</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">]]]](</span><span class="n">value</span><span class="o">,</span> <span class="nc">Some</span><span class="o">(</span><span class="nc">Success</span><span class="o">(</span><span class="nc">List</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">9</span><span class="o">))))</span>
+<span class="o">}</span>
+						</pre>
+						<aside class="notes">
+							<ul>
+								<li>Here's a clean interface</li>
+								<li>The same result if we'd lifted or mapped explicltly.</li>
+							</ul>
+						</aside>
 					</section>
 					<section>
-						Then introduce the converse (contexts or extensions)
+						<p>type driven</p>
+						<pre>
+
+<span class="k">val</span> <span class="n">flOpt</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">Option</span><span class="o">[</span><span class="kt">Int</span><span class="o">]]]</span> <span class="k">=</span> <span class="o">...</span>
+
+<span class="k">val</span> <span class="n">flInt</span> <span class="k">=</span> <span class="n">flOpt</span><span class="o">.</span><span class="n">liftMap</span><span class="o">{</span> <span class="n">x</span><span class="k">:</span> <span class="kt">Option</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="k">=&gt;</span> <span class="n">x</span><span class="o">.</span><span class="n">getOrElse</span><span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="o">}</span>
+
+<span class="n">whenReady</span><span class="o">(</span><span class="n">flInt</span><span class="o">){</span> <span class="n">value</span> <span class="k">=&gt;</span>
+	<span class="n">same</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">]](</span><span class="n">value</span><span class="o">,</span> <span class="nc">List</span><span class="o">(</span><span class="mi">0</span><span class="o">))</span>
+<span class="o">}</span>
+						</pre>
+						<aside class="notes">
+							<ul>
+								<li>No manual intervention. Compiler uses types to find application point of function.</li>
+							</ul>
+						</aside>
+					</section>
+					<section>
+						<p>works with <code>flatMap</code></p>
+						<pre>
+
+<span class="k">val</span> <span class="n">flOpt</span><span class="k">:</span> <span class="kt">Future</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">Option</span><span class="o">[</span><span class="kt">Int</span><span class="o">]]]</span> <span class="k">=</span> <span class="o">...</span>
+
+<span class="n">flOpt</span><span class="o">.</span><span class="n">liftFlatMap</span><span class="o">{</span> <span class="n">x</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=&gt;</span>
+	<span class="k">if</span><span class="o">(</span><span class="n">x</span> <span class="o">%</span> <span class="mi">4</span> <span class="o">==</span> <span class="mi">1</span><span class="o">)</span> <span class="nc">Some</span><span class="o">(</span><span class="n">x</span><span class="o">)</span> <span class="k">else</span> <span class="nc">None</span>
+<span class="o">}</span>
+						</pre>
+					</section>
+					<section>
+						<p>functions lifted</p>
+						<pre>
+
+<span class="k">def</span> <span class="n">liftAp</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">C</span>, <span class="kt">M</span><span class="o">[</span><span class="k">_</span><span class="o">]](</span><span class="n">f</span><span class="k">:</span> <span class="kt">M</span><span class="o">[</span><span class="kt">B</span> <span class="k">=&gt;</span> <span class="kt">C</span><span class="o">])</span>
+<span class="k">def</span> <span class="n">liftFlatMap</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">C</span>, <span class="kt">M</span><span class="o">[</span><span class="k">_</span><span class="o">]](</span><span class="n">f</span><span class="k">:</span> <span class="kt">B</span> <span class="o">=&gt;</span> <span class="n">M</span><span class="o">[</span><span class="kt">C</span><span class="o">])</span>
+<span class="k">def</span> <span class="n">liftFoldLeft</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">Z</span><span class="o">](</span><span class="n">z</span><span class="k">:</span> <span class="kt">Z</span><span class="o">)(</span><span class="n">f</span><span class="k">:</span> <span class="o">(</span><span class="kt">Z</span><span class="o">,</span> <span class="kt">B</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">Z</span><span class="o">)</span>
+<span class="k">def</span> <span class="n">liftFoldRight</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">Z</span><span class="o">](</span><span class="n">z</span><span class="k">:</span> <span class="kt">Z</span><span class="o">)(</span><span class="n">f</span><span class="k">:</span> <span class="o">(</span><span class="kt">B</span><span class="o">,</span> <span class="o">=&gt;</span> <span class="n">Z</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">Z</span><span class="o">)</span>
+<span class="k">def</span> <span class="n">liftFold</span>
+<span class="k">def</span> <span class="n">liftFoldMap</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">C</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">B</span> <span class="o">=&gt;</span> <span class="n">C</span><span class="o">)</span>
+<span class="k">def</span> <span class="n">liftFoldAt</span><span class="o">[</span><span class="kt">M</span><span class="o">[</span><span class="k">_</span><span class="o">]]</span>
+<span class="k">def</span> <span class="n">liftFilter</span><span class="o">[</span><span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">B</span> <span class="o">=&gt;</span> <span class="nc">Boolean</span><span class="o">)</span>
+<span class="k">def</span> <span class="n">liftFlatten</span><span class="o">[</span><span class="kt">M</span><span class="o">[</span><span class="k">_</span><span class="o">]]</span>
+						</pre>
+						<aside class="notes">
+							<ul>
+								<li>Implicit class syntax extension, i.e. "pimp my library" method.</li>
+							</ul>
+						</aside>
+					</section>
+					<section>
+						<p>What's the return type?</p>
+						<pre>
+
+<span class="k">def</span> <span class="n">liftMap</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">C</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">B</span> <span class="o">=&gt;</span> <span class="n">C</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">lift</span><span class="k">:</span> <span class="kt">LiftF</span><span class="o">[</span><span class="kt">F</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span>, <span class="kt">B</span> <span class="k">=&gt;</span> <span class="kt">C</span><span class="o">])</span><span class="k">:</span> <span class="kt">lift.Out</span> <span class="o">=</span> 
+	<span class="n">lift</span><span class="o">(</span><span class="n">fa</span><span class="o">,</span> <span class="n">f</span><span class="o">)</span>
+						</pre>
+						<aside class="notes">
+							<ul>
+								<li>Point out dependent type <code>lift.Out</code></li>
+								<li>Quick explanation of dependent types and type paramters.</li>
+								<li>State that <code>F[A]</code> is the object type.</li>
+								<li>Complexity of lifting hidden by type class</li>
+							</ul>
+						</aside>
 					</section>
 				</section>
 				<section>
+					<p>OO and FP</p>
+					<img src="https://pixabay.com/static/uploads/photo/2012/12/13/11/47/boy-69723_640.jpg"/>
+				</section>
+				<section>
+					<section>
+						<h3>Lifting</h3>
+						<img src="https://pixabay.com/static/uploads/photo/2015/07/08/03/13/forklift-835341_640.jpg"/>
+						<h3>Contexts</h3>
+						<aside class="notes">
+							<ul>
+								<li>Revisit what lift* is and where we got the notion</li>
+								<li>say we will generalize furhter</li>
+							</ul>
+						</aside>
+					</section>
+					<section>
+						<code>liftM</code> in Haskell
+						<pre>
+
+	<span class="nf">liftM</span> <span class="ow">::</span> <span class="kt">Monad</span> <span class="n">m</span> <span class="ow">=&gt;</span> <span class="p">(</span><span class="n">a</span> <span class="ow">-&gt;</span> <span class="n">b</span><span class="p">)</span> <span class="ow">-&gt;</span> <span class="n">m</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="n">m</span> <span class="n">b</span>
+						</pre>
+						defined for <i>any</i> Monad.
+						<aside class="notes">
+							Point out not using Functor as before. Reason comes in later slides.
+						</aside>
+					</section>
+					<section>
+						<p><code>LiftM</code> composes</p>
+						<pre>
+
+	<span class="p">(</span><span class="n">liftM</span> <span class="n">f</span><span class="p">)</span> <span class="o">.</span> <span class="p">(</span><span class="n">liftM</span> <span class="n">g</span><span class="p">)</span> <span class="kt">==</span> <span class="n">liftM</span> <span class="p">(</span><span class="n">f</span> <span class="o">.</span> <span class="n">g</span><span class="p">)</span>
+						</pre>
+						<p>.</p>
+						<pre>
+
+	<span class="p">(</span><span class="n">liftM</span> <span class="o">.</span> <span class="n">liftM</span><span class="p">)</span> <span class="n">f</span> <span class="kt">==</span> <span class="n">liftM</span> <span class="p">(</span><span class="n">liftM</span> <span class="n">f</span><span class="p">)</span>
+						</pre>
+						<p>because it's just a function.</p>
+						<aside class="notes">
+							<ul>
+								<li>remind again that properties of the underlying object aren't lost when lifted</li>
+								<li>Can use new context to gain more abilities</li>
+								<li>talk about difficulties expressing liftM . liftM in Scala due to the manner of type inference</li>
+							</ul>
+						</aside>
+					</section>
+					<section>
+						<p><code>LiftM2</code> follows</p>
+						<pre>
+
+<span class="nf">liftM2</span> <span class="p">(</span><span class="o">+</span><span class="p">)</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">
+						</pre>
+						<p>equivalent in Scala to</p>
+						<pre>
+
+<span class="k">def</span> <span class="n">add</span><span class="o">(</span><span class="n">list1</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">],</span> <span class="n">list2</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">])</span><span class="k">:</span> <span class="kt">List</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="k">=</span> <span class="k">for</span><span class="o">{</span>
+		<span class="n">item1</span> <span class="k">&lt;-</span> <span class="n">list1</span>
+		<span class="n">item2</span> <span class="k">&lt;-</span> <span class="n">list2</span>
+<span class="o">}</span> <span class="k">yield</span> <span class="n">item1</span> <span class="o">+</span> <span class="n">item2</span>
+						</pre>
+						<aside class="notes">
+							<ul>
+								<li>Draw upon liftM . liftM difficulties</li>
+								<li>Manual nature of stacking liftM2 (don't say can't compose, 'cause they can.)</li>
+								<li>Lead on to "push button"</li>
+							</ul>
+						</aside>
+					</section>
+					<section>
+						<p>Function operating on objects</p>
+						<pre>
+
+<span class="k">val</span> <span class="n">add</span> <span class="k">=</span> <span class="n">liftM2</span><span class="o">{</span> <span class="o">(</span><span class="n">x</span><span class="k">:</span> <span class="kt">Int</span><span class="o">,</span> <span class="n">y</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">x</span><span class="o">+</span><span class="n">y</span> <span class="o">}</span>
+
+<span class="k">val</span> <span class="n">one</span> <span class="k">=</span> <span class="n">add</span><span class="o">(</span><span class="nc">List</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">1</span><span class="o">),</span> <span class="nc">List</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">2</span><span class="o">))</span>
+						</pre>
+						<p>wrap a function in an auto lifting context</p>
+						<pre>
+
+<span class="k">val</span> <span class="n">two</span> <span class="k">=</span> <span class="n">add</span><span class="o">(</span><span class="nc">List</span><span class="o">(</span><span class="nc">Option</span><span class="o">(</span><span class="mi">1</span><span class="o">),</span> <span class="nc">None</span><span class="o">),</span> <span class="nc">List</span><span class="o">(</span><span class="nc">Option</span><span class="o">(</span><span class="mi">3</span><span class="o">)))</span>
+
+<span class="n">same</span><span class="o">[</span><span class="kt">List</span><span class="o">[</span><span class="kt">Option</span><span class="o">[</span><span class="kt">Int</span><span class="o">]]](</span><span class="n">two</span><span class="o">,</span> <span class="nc">List</span><span class="o">(</span><span class="nc">Option</span><span class="o">(</span><span class="mi">4</span><span class="o">)))</span>
+						</pre>
+					</section>
+					<section>
+						<p>Contexts Provided</p>
+						<pre>
+
+<span class="k">def</span> <span class="n">liftMap</span><span class="o">[</span><span class="kt">B</span>, <span class="kt">C</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">B</span> <span class="o">=&gt;</span> <span class="n">C</span><span class="o">)</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">LiftedMap</span><span class="o">(</span><span class="n">f</span><span class="o">)</span>
+<span class="k">def</span> <span class="n">liftAp</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">B</span>, <span class="kt">F</span><span class="o">[</span><span class="k">_</span><span class="o">]](</span><span class="n">f</span><span class="k">:</span> <span class="kt">F</span><span class="o">[</span><span class="kt">A</span> <span class="k">=&gt;</span> <span class="kt">B</span><span class="o">])(</span><span class="k">implicit</span> <span class="n">ap</span><span class="k">:</span> <span class="kt">Apply</span><span class="o">[</span><span class="kt">F</span><span class="o">])</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">LiftedAp</span><span class="o">(</span><span class="n">f</span><span class="o">)</span>
+<span class="k">def</span> <span class="n">liftFlatMap</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">B</span>, <span class="kt">M</span><span class="o">[</span><span class="k">_</span><span class="o">]](</span><span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">M</span><span class="o">[</span><span class="kt">B</span><span class="o">])(</span><span class="k">implicit</span> <span class="n">bind</span><span class="k">:</span> <span class="kt">Bind</span><span class="o">[</span><span class="kt">M</span><span class="o">])</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">LiftedFlatMap</span><span class="o">(</span><span class="n">f</span><span class="o">)</span>
+<span class="k">def</span> <span class="n">liftFoldMap</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">m</span><span class="k">:</span> <span class="kt">Monoid</span><span class="o">[</span><span class="kt">B</span><span class="o">])</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">LiftedFoldMap</span><span class="o">(</span><span class="n">f</span><span class="o">)</span>
+<span class="k">def</span> <span class="n">liftFilter</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="nc">Boolean</span><span class="o">)</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">LiftedFilter</span><span class="o">(</span><span class="n">f</span><span class="o">)</span>
+<span class="k">def</span> <span class="n">liftA2</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">B</span>, <span class="kt">C</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="o">(</span><span class="kt">A</span><span class="o">,</span> <span class="kt">B</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">C</span><span class="o">)</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">LiftedA2</span><span class="o">(</span><span class="n">f</span><span class="o">)</span>
+<span class="k">def</span> <span class="n">liftA3</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">B</span>, <span class="kt">C</span>, <span class="kt">D</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="o">(</span><span class="kt">A</span><span class="o">,</span> <span class="kt">B</span><span class="o">,</span> <span class="n">C</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">D</span><span class="o">)</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">LiftedA3</span><span class="o">(</span><span class="n">f</span><span class="o">)</span>
+<span class="k">def</span> <span class="n">liftM2</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">B</span>, <span class="kt">C</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="o">(</span><span class="kt">A</span><span class="o">,</span> <span class="kt">B</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">C</span><span class="o">)</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">LiftedM2</span><span class="o">(</span><span class="n">f</span><span class="o">)</span>
+<span class="k">def</span> <span class="n">liftM3</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">B</span>, <span class="kt">C</span>, <span class="kt">D</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="o">(</span><span class="kt">A</span><span class="o">,</span> <span class="kt">B</span><span class="o">,</span> <span class="n">C</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">D</span><span class="o">)</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">LiftedM3</span><span class="o">(</span><span class="n">f</span><span class="o">)</span>
+						</pre>
+					</section>
+					<section>
+						<p>Anatomy of a Lift</p>
+						<pre>
+
+<span class="k">sealed</span> <span class="k">class</span> <span class="nc">LiftedMap</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">B</span><span class="o">](</span><span class="n">f</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=&gt;</span> <span class="n">B</span><span class="o">){</span>
+	<span class="k">def</span> <span class="n">andThen</span><span class="o">[</span><span class="kt">C</span> <span class="k">&gt;:</span> <span class="kt">B</span>, <span class="kt">D</span><span class="o">](</span><span class="n">that</span><span class="k">:</span> <span class="kt">LiftedMap</span><span class="o">[</span><span class="kt">C</span>, <span class="kt">D</span><span class="o">])</span> <span class="k">=</span> <span class="n">that</span> <span class="n">compose</span> <span class="k">this</span>
+
+	<span class="k">def</span> <span class="n">compose</span><span class="o">[</span><span class="kt">C</span>, <span class="kt">D</span> <span class="k">&lt;:</span> <span class="kt">A</span><span class="o">](</span><span class="n">that</span><span class="k">:</span> <span class="kt">LiftedMap</span><span class="o">[</span><span class="kt">C</span>, <span class="kt">D</span><span class="o">])</span> <span class="k">=</span> <span class="n">that</span> <span class="n">map</span> <span class="n">f</span>
+
+	<span class="k">def</span> <span class="n">map</span><span class="o">[</span><span class="kt">C</span><span class="o">](</span><span class="n">g</span><span class="k">:</span> <span class="kt">B</span> <span class="o">=&gt;</span> <span class="n">C</span><span class="o">)</span><span class="k">:</span> <span class="kt">LiftedMap</span><span class="o">[</span><span class="kt">A</span>, <span class="kt">C</span><span class="o">]</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">LiftedMap</span><span class="o">(</span><span class="n">f</span> <span class="n">andThen</span> <span class="n">g</span><span class="o">)</span>
+
+	<span class="k">def</span> <span class="n">apply</span><span class="o">[</span><span class="kt">That</span><span class="o">](</span><span class="n">that</span><span class="k">:</span> <span class="kt">That</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">lift</span><span class="k">:</span> <span class="kt">LiftF</span><span class="o">[</span><span class="kt">That</span>, <span class="kt">A</span> <span class="k">=&gt;</span> <span class="kt">B</span><span class="o">])</span><span class="k">:</span> <span class="kt">lift.Out</span> <span class="o">=</span> <span class="n">lift</span><span class="o">(</span><span class="n">that</span><span class="o">,</span> <span class="n">f</span><span class="o">)</span>
+<span class="o">}</span>
+						</pre>
+					</section>
+					<section>
+						<p>Same as before</p>
+						<pre>
+
+<span class="k">def</span> <span class="n">apply</span><span class="o">[</span><span class="kt">That</span><span class="o">](</span><span class="n">that</span><span class="k">:</span> <span class="kt">That</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">lift</span><span class="k">:</span> <span class="kt">LiftF</span><span class="o">[</span><span class="kt">That</span>, <span class="kt">A</span> <span class="k">=&gt;</span> <span class="kt">B</span><span class="o">])</span><span class="k">:</span> <span class="kt">lift.Out</span> <span class="o">=</span> 
+	<span class="n">lift</span><span class="o">(</span><span class="n">that</span><span class="o">,</span> <span class="n">f</span><span class="o">)</span>
+						</pre>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h3>AutoLifts</h3>
+						<img src="https://pixabay.com/static/uploads/photo/2014/05/03/00/07/ski-lift-336534_640.jpg" />
+						<p>Limitations and Future Plans</p>
+					</section>
+					<section>
+						<p>Partial Functions</p>
+						<pre>
+
+<span class="nc">Option</span><span class="o">(</span><span class="nc">List</span><span class="o">(</span><span class="mi">1</span><span class="o">)).</span><span class="n">liftMap</span><span class="o">{</span>
+	<span class="k">case</span> <span class="nc">List</span><span class="o">(</span><span class="n">v</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">v</span>
+	<span class="k">case</span> <span class="k">Nil</span> <span class="k">=&gt;</span> <span class="mi">0</span>
+<span class="o">}</span>
+						</pre>
+						<p>yields</p>
+						<pre>
+
+missing parameter type for expanded function
+[<span class="s">error</span>] The argument types of an anonymous function must be fully known. (SLS 8.5)
+[<span class="s">error</span>] Expected type was: ? => ?
+[<span class="s">error</span>] 		Option(List(1)).liftMap{
+[<span class="s">error</span>] 		                       ^
+[<span class="s">error</span>] one error found
+						</pre>
+					</section>
+					<section>
+						<p>works</p>
+						<pre>
+
+<span class="k">val</span> <span class="n">out</span> <span class="k">=</span> <span class="k">for</span><span class="o">{</span>
+	<span class="n">item1</span> <span class="k">&lt;-</span> <span class="n">list1</span> <span class="c1">//flatMap</span>
+	<span class="n">item2</span> <span class="k">&lt;-</span> <span class="n">list2</span> <span class="c1">//map</span>
+<span class="o">}</span> <span class="k">yield</span> <span class="n">item1</span> <span class="o">+</span> <span class="n">item2</span>
+						</pre>
+						<p>doesn't work</p>
+						<pre>
+
+<span class="k">val</span> <span class="n">out</span> <span class="k">=</span> <span class="k">for</span><span class="o">{</span>
+	<span class="n">item1</span> <span class="k">&lt;-</span> <span class="n">futList1</span> <span class="c1">//liftFlatMap</span>
+	<span class="n">item2</span> <span class="k">&lt;-</span> <span class="n">futList2</span> <span class="c1">//liftMap</span>
+<span class="o">}</span> <span class="k">yield</span> <span class="n">item1</span> <span class="o">+</span> <span class="n">item2</span>
+						</pre>
+					</section>
+					<section>
+						<p>Boilerplate</p>
+						<pre>
+
+liftA2
+liftA3
+liftM2
+liftM3
+						</pre>
+						<p>what about 4, 5, ..., 22?</p>
+					</section>
+					<section>
+						<p>Based on Scalaz</p>
+						<img src="https://pixabay.com/static/uploads/photo/2014/06/11/18/11/cat-366930_640.jpg	" />
+						<p>Algebird requested, Cats "soon"</p>
+					</section>
+					<section>
+						<p>Documentation</p>
+						<pre>
+
+<span class="n">resolvers</span> <span class="o">+=</span> <span class="nc">Resolver</span><span class="o">.</span><span class="n">url</span><span class="o">(</span>
+  <span class="s">&quot;tpolecat-sbt-plugin-releases&quot;</span><span class="o">,</span>
+    <span class="n">url</span><span class="o">(</span><span class="s">&quot;http://dl.bintray.com/content/tpolecat/sbt-plugin-releases&quot;</span><span class="o">))(</span>
+        <span class="nc">Resolver</span><span class="o">.</span><span class="n">ivyStylePatterns</span><span class="o">)</span>
+
+<span class="n">addSbtPlugin</span><span class="o">(</span><span class="s">&quot;org.tpolecat&quot;</span> <span class="o">%</span> <span class="s">&quot;tut-plugin&quot;</span> <span class="o">%</span> <span class="s">&quot;0.4.0&quot;</span><span class="o">)</span>
+
+<span class="n">addSbtPlugin</span><span class="o">(</span><span class="s">&quot;org.xerial.sbt&quot;</span> <span class="o">%</span> <span class="s">&quot;sbt-sonatype&quot;</span> <span class="o">%</span> <span class="s">&quot;0.5.1&quot;</span><span class="o">)</span>
+
+<span class="n">addSbtPlugin</span><span class="o">(</span><span class="s">&quot;com.jsuereth&quot;</span> <span class="o">%</span> <span class="s">&quot;sbt-pgp&quot;</span> <span class="o">%</span> <span class="s">&quot;1.0.0&quot;</span><span class="o">)</span>
+
+<span class="n">addSbtPlugin</span><span class="o">(</span><span class="s">&quot;com.typesafe.sbt&quot;</span> <span class="o">%</span> <span class="s">&quot;sbt-site&quot;</span> <span class="o">%</span> <span class="s">&quot;0.8.2&quot;</span><span class="o">)</span>
+
+<span class="n">addSbtPlugin</span><span class="o">(</span><span class="s">&quot;com.typesafe.sbt&quot;</span> <span class="o">%</span> <span class="s">&quot;sbt-ghpages&quot;</span> <span class="o">%</span> <span class="s">&quot;0.5.4&quot;</span><span class="o">)</span>
+
+<span class="n">addSbtPlugin</span><span class="o">(</span><span class="s">&quot;com.eed3si9n&quot;</span> <span class="o">%</span> <span class="s">&quot;sbt-unidoc&quot;</span> <span class="o">%</span> <span class="s">&quot;0.3.3&quot;</span><span class="o">)</span>
+						</pre>
+						<aside class="notes">
+							<p>flip to github pages, show the md docs</p>
+						</aside>
+					</section>
+					<section>
+						<p>Adding to project</p>
+						<pre>
+
+	<span class="n">libraryDependencies</span> <span class="o">+=</span> <span class="s">&quot;com.github.wheaties&quot;</span> <span class="o">%%</span> <span class="s">&quot;autolift&quot;</span> <span class="o">%</span> <span class="s">&quot;0.3&quot;</span>
+						</pre>
+						<p>Code at:</p>
+						<a href="https://github.com/wheaties/AutoLifts">https://github.com/wheaties/AutoLifts</a>
+					</section>
 				</section>
 				<section>
 					<h3>Questions?</h3>
@@ -139,15 +523,15 @@ hate
 					{ 
 						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/lib/js/classList.js', 
 						condition: function() { return !document.body.classList; } 
-					}/*,
-					{
+					},
+					/*{
 						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/markdown/marked.js', 
 						condition: function() { return !!document.querySelector( '[data-markdown]' ); } 
-					},
+					},*/
 					{ 
-						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/markdown/markdown.js', 
-						condition: function() { return !!document.querySelector( '[data-markdown]' ); } 
-					}*/
+						src: 'http://cdnjs.cloudflare.com/ajax/libs/reveal.js/2.6.2/plugin/notes/notes.js',
+						async: true 
+					}
 				],
 				keyboard:{
 					88: function(){
