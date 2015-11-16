@@ -1,0 +1,10 @@
+<div class="highlight"><pre><span class="nf">liftM</span> <span class="ow">::</span> <span class="kt">Monad</span> <span class="n">m</span> <span class="ow">=&gt;</span> <span class="p">(</span><span class="n">a</span> <span class="ow">-&gt;</span> <span class="n">b</span><span class="p">)</span> <span class="ow">-&gt;</span> <span class="n">m</span> <span class="n">a</span> <span class="ow">-&gt;</span> <span class="n">m</span> <span class="n">b</span>
+
+<span class="p">(</span><span class="n">liftM</span> <span class="n">f</span><span class="p">)</span> <span class="o">.</span> <span class="p">(</span><span class="n">liftM</span> <span class="n">g</span><span class="p">)</span> <span class="kt">Ma</span>
+
+<span class="p">(</span><span class="n">liftM</span> <span class="n">f</span><span class="p">)</span> <span class="o">.</span> <span class="p">(</span><span class="n">liftM</span> <span class="n">g</span><span class="p">)</span> <span class="o">==</span> <span class="n">liftM</span> <span class="p">(</span><span class="n">f</span> <span class="o">.</span> <span class="n">g</span><span class="p">)</span>
+
+<span class="p">(</span><span class="n">liftM</span> <span class="o">.</span> <span class="n">liftM</span><span class="p">)</span> <span class="n">f</span> <span class="o">==</span> <span class="n">liftM</span> <span class="p">(</span><span class="n">liftM</span> <span class="n">f</span><span class="p">)</span>
+
+<span class="nf">liftM2</span> <span class="p">(</span><span class="o">+</span><span class="p">)</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]</span>
+</pre></div>
