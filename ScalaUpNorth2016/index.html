@@ -4,13 +4,13 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-		<title>reveal.js</title>
+		<title>TwoTails for the Price of One</title>
 
 		<link rel="stylesheet" href="css/reveal.css">
-		<link rel="stylesheet" href="css/theme/black.css">
+		<link rel="stylesheet" href="css/theme/beige.css">
 
 		<!-- Theme used for syntax highlighting of code -->
-		<link rel="stylesheet" href="lib/css/zenburn.css">
+		<link rel="stylesheet" href="lib/css/pojoaque.css">
 
 		<!-- Printing and PDF exports -->
 		<script>
@@ -24,8 +24,254 @@
 	<body>
 		<div class="reveal">
 			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
+				<section>
+					<h1>TwoTails</h1>
+					<h2>A Scala Compiler Plugin</h2>
+					<p>
+						<small><a href="https://twitter.com/OweinReese">@OweinReese</a></small>
+					</p>
+					<p>background is a city scape?</p>
+					<p>old timey title badge?</p>
+				</section>
+				<section>
+					<section>
+						<h2>Why?</h2>
+					</section>
+					<section>
+						<p>familiar</p>
+						<pre><code class="scala">
+class Counter{
+  @tailrec final def count(lst: List[_], cnt: Int = 0): Int = 
+    if(lst == Nil) cnt else count(lst.tail, cnt+1)
+}
+						</code></pre>
+					</section>
+					<section>Code with mutual recursion
+					<pre><code class="scala">
+scala> object Overflow{
+  def one(x: Int, cnt: Int=0): Int = if(x < 0) cnt else two(x-1, cnt+1)
+  def two(x: Int, cnt: Int=0): Int = if(x < 0) cnt else one(x-1, cnt+1)
+}
+
+scala> Overflow.one(76000)
+						</code></pre>
+					</section>
+					<section>StackOverflow
+						<pre><code class="scala">
+java.lang.StackOverflowError
+  at Overflow.two(<console>:9)
+  at Overflow.one(<console>:8)
+  at Overflow.two(<console>:9)
+  at Overflow.one(<console>:8)
+  at Overflow.two(<console>:9)
+  at Overflow.one(<console>:8)
+  at Overflow.two(<console>:9)
+  at Overflow.one(<console>:8)
+  at Overflow.two(<console>:9)
+  						</code></pre>
+					</section>
+					<section>Now With TwoTails
+						<pre><code class="scala">
+scala> object NoOverflow{
+  @mutualrec def one(x: Int, cnt: Int=0): Int = if(x < 0) cnt else two(x-1, cnt+1)
+  @mutualrec def two(x: Int, cnt: Int=0): Int = if(x < 0) cnt else one(x-1, cnt+1)
+}
+
+scala> NoOverflow.one(76000)
+res0: 76001
+						</code></pre>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>Using TwoTails</h2>
+					</section>
+					<section>Type Signatures Must Match
+						<pre><code class="scala">
+final class WontCompile{
+  @mutualrec def one(x: Int): Int = if(x < 0) 0 else two(0, x)
+  @mutualrec def two(base: Int, x: Int): Int = 
+    if(x < 0) Num.base(base)(x) else one(x+1)
+}
+						</code></pre>
+					</section>
+					<section>
+						<p>Automatic Call Graph Discovery</p>
+						<pre><code class="scala">
+final class TwoGroups{
+  @mutualrec def one(x: Int): Int = if(x < 0) x else two(x-1)
+  @mutualrec def two(x: Int): Int = if(x < 0) x else one(x-1)
+
+  @mutualrec def three(x: Int, y: Int): Int = 
+    if(x < 0) y else four(x-1, y+1)
+  @mutualrec def four(x: Int, y: Int): Int = 
+    if(x < 0) y else three(x-1, y+1)
+}
+						</code></pre>
+					</section>
+					<section>
+						<p>Effectively Final</p>
+						<pre><code class="scala">
+sealed trait Foo{
+  def one(x: Int): Int
+  def two(x: Int): Int
+}
+
+class Bar extends Foo{
+  @mutualrec def one(x: Int): Int = if(x < 0) x else two(x-1)
+  @mutualrec def two(x: Int): Int = if(x < 0) x else one(x-1)
+}
+						</code></pre>
+						<p>(less restrictive than plain final)</p>
+					</section>
+					<section>Use Almost Anywhere
+						<pre><code class="scala">
+def yo(z: Int): Int ={
+  @mutualrec def one(x: Int): Int = if(x < 0) x else two(x-1)
+  @mutualrec def two(x: Int): Int = if(x < 0) x else one(x-1)
+
+  one(z*2)
+}
+						</code></pre>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>Tailrec Transformation</h2>
+					</section>
+					<section>
+						<p>Imperative</p>
+						<pre><code class="scala">
+class Foo{
+  def size(lst: List[_]): Int ={
+    var cnt = 0
+    var current = lst
+    while(current != Nil){
+      current = lst.tail
+      cnt += 1
+    }
+    cnt
+  }
+}
+						</code></pre>
+						does this really make sense here? Don't think so...
+					</section>
+					<section>
+						<p>Functional</p>
+						<pre><code class="scala">
+class Foo{
+  def size(lst: List[_]): Int = _size(lst, 0)
+  @tailrec private def _size(lst: List[_], cnt: Int): Int =
+    if(x == Nil) cnt else _size(lst.tail, cnt+1)
+}
+						</code></pre>
+					</section>
+					<section>
+						<p>Labled Statements</p>
+						<pre><code class="scala">
+class Foo{
+  def size(list: List[_]): Int ={
+    var _list = list
+    var cnt = 0
+    label _size:
+      if(_list == Nil) cnt else{
+        _list = _list.tail
+        cnt += 1
+        break _size
+      }
+  }
+}
+						</code></pre>
+					</section>
+					<section>
+					<p>Position Markers</p>
+					<pre><code class="hljs">
+    [993]@scala.annotation.tailrec final def doStuff[[997]A[997]]([874]indx: [874]Int, [1010]x: [1010]A, [1016]y: [1016]Int)(implicit [993]evidence$2: [993]Numeric[A]): [993]A = [993][993]([993]indx: [993]<type: [NoPosition][993]indx: @[993]scala.annotation.switch>) match {
+      [993]case [993]0 => [1029]if ([1034:1035][1034:1035][1032]0.<([1036]y))
+        [1042][1042][1039][NoPosition][NoPosition]Example.this.doStuff[[1039]A]([NoPosition]1, [1043]x, [1047:1048][1047:1048]y.-([1048]1))([1042]evidence$2)
+      else
+        [1056]x
+      [993]case [993]1 => [941]if ([946:947][946:947][944]0.<([948]y))
+        [954][954][951][NoPosition][NoPosition]Example.this.doStuff[[951]A]([NoPosition]0, [955]x, [959:960][959:960]y.-([960]1))([954]evidence$2)
+      else
+        [968]x
+    };
+					</code></pre>
+					</section>
+				</section>
+				<section>
+					<section>Difficulty of mutual recursion/how twotails works
+						<ol>Points to cover
+							<li>jump points are rigid</li>
+							<li>2ndary function causes stack trace shenanigans</li>
+							<li>function size limits</li>
+						</ol>
+					</section>
+					<section>
+					<p>Labels are rigid</p>
+					<pre><code class="scala">
+def foo(x: Int): Int ={
+  label _foo:
+    if(x < 0) break _bar else x 
+}
+def bar(x: Int): Int ={
+  var y = x
+  label _bar:
+    if(y < 0) 0 else{
+      y -= 1
+      break _bar
+    }
+}
+					</code></pre>
+					<p>won't compile</p>
+					<p>NOTE: have "large methods" follow this and how mutualrec works</p>
+					</section>
+					<section>
+						<p>Exceptions are Diverted</p>
+						<pre><code class="scala">
+final class Chipmunk{
+  @mutualrec def one(x: Int): Int = if(x < 0) x else two(x-1)
+  @mutualrec def two(x: Int): Int = 
+    if(x < 0) throw new Exception("bam!") else one(x-1)
+}
+						</code></pre>
+						<pre><code class="scala">
+java.lang.Exception: bam!
+	at twotails.Chipmunk.mutualrec_fn$0(BasicTest.scala:69)
+	at twotails.Chipmunk.one(BasicTest.scala:68)
+
+						</code></pre>
+					</section>
+					
+					<section>
+						<p>Large Methods</p>
+						<blockquote>...a compiler writer can work around this bug by limiting the maximum size of the generated Java Virtual Machine code for any method...to 65534 bytes.</blockquote>
+					</section>
+				</section>
+				<section>
+					<section>
+					<p>This sucks combine issues, future plans and such</p>
+						<lo>Issues and Future plans
+							<li>cycles</li>
+							<li>method size compiler flag</li>
+							<li>get line positions in mutual_fn to line up</li>
+						</lo>
+					</section>
+					<section>
+						<p>Simple Cycles Only</p>
+						<pre><code class="scala">
+final class Bug{
+  @mutualrec def one(x: Int): Int = if(x < 0) x else two(x-1)
+  @mutualrec def two(x: Int): Int = if(x < 0) x else three(x-1)
+  @mutualrec def three(x: Int): Int = 
+    if(x < 0) one(x) else two(x)
+}
+						</code></pre>
+					</section>
+					<section></section>
+					<section></section>
+				</section>
+				<section>Who I am, repo link</section>
 			</div>
 		</div>
 
@@ -33,16 +279,15 @@
 		<script src="js/reveal.js"></script>
 
 		<script>
-			// More info https://github.com/hakimel/reveal.js#configuration
 			Reveal.initialize({
 				history: true,
 
-				// More info https://github.com/hakimel/reveal.js#dependencies
 				dependencies: [
 					{ src: 'plugin/markdown/marked.js' },
 					{ src: 'plugin/markdown/markdown.js' },
 					{ src: 'plugin/notes/notes.js', async: true },
-					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/notes-server/client.js', async: true }
 				]
 			});
 		</script>
