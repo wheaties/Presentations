@@ -30,23 +30,37 @@
 					<p>
 						<small><a href="https://twitter.com/OweinReese">@OweinReese</a></small>
 					</p>
-					<p>background is a city scape?</p>
-					<p>old timey title badge?</p>
+					<aside class="notes">
+						<ol>
+							<li>What is Twotails</li>
+							<li>Why use it?</li>
+							<li>How tail recursion works in Scala</li>
+							<li>How JVM makes mutual hard, my workarounds</li>
+							<li>Future plans for plugin</li>
+						</ol>
+					</aside>
 				</section>
 				<section>
 					<section>
-						<h2>Why?</h2>
+						<h2>What is it?</h2>
 					</section>
 					<section>
-						<p>familiar</p>
+						<p>Familiar With This?</p>
 						<pre><code class="scala">
 class Counter{
   @tailrec final def count(lst: List[_], cnt: Int = 0): Int = 
     if(lst == Nil) cnt else count(lst.tail, cnt+1)
 }
 						</code></pre>
+						<aside class="notes">
+							<ul>
+								<li>Compiler doesn't require tailrec to tail call transform</li>
+								<li>made possible by tail call position</li>
+							</ul>
+						</aside>
 					</section>
-					<section>Code with mutual recursion
+					<section>
+					<p>Code with mutual recursion</p>
 					<pre><code class="scala">
 scala> object Overflow{
   def one(x: Int, cnt: Int=0): Int = if(x < 0) cnt else two(x-1, cnt+1)
@@ -56,7 +70,8 @@ scala> object Overflow{
 scala> Overflow.one(76000)
 						</code></pre>
 					</section>
-					<section>StackOverflow
+					<section>
+						<p>StackOverflow</p>
 						<pre><code class="scala">
 java.lang.StackOverflowError
   at Overflow.two(<console>:9)
@@ -70,7 +85,8 @@ java.lang.StackOverflowError
   at Overflow.two(<console>:9)
   						</code></pre>
 					</section>
-					<section>Now With TwoTails
+					<section>
+						<p>Now With TwoTails</p>
 						<pre><code class="scala">
 scala> object NoOverflow{
   @mutualrec def one(x: Int, cnt: Int=0): Int = if(x < 0) cnt else two(x-1, cnt+1)
@@ -80,11 +96,28 @@ scala> object NoOverflow{
 scala> NoOverflow.one(76000)
 res0: 76001
 						</code></pre>
+						<aside class="notes">
+							<p>Why you want to use:</p>
+							<ol>
+								<li>Don't have to use Trampolines. No object allocations. No GC pressure</li>
+								<li>break up large tailrec functions</li>
+								<li>Punch someone in the facw who writes 400 line function</li>
+							</ol>
+						</aside>
 					</section>
 				</section>
 				<section>
 					<section>
 						<h2>Using TwoTails</h2>
+					</section>
+					<section>
+						<p>Add a Dependency</p>
+						<pre><code class="scala">
+libraryDependencies ++= Seq(
+  compilerPlugin("com.github.wheaties" %% "twotails" % "0.2.0"),
+  "com.github.wheaties" %% "twotails-annotations" % "0.2.0"
+)
+						</code></pre>
 					</section>
 					<section>Type Signatures Must Match
 						<pre><code class="scala">
@@ -137,47 +170,29 @@ def yo(z: Int): Int ={
 				</section>
 				<section>
 					<section>
-						<h2>Tailrec Transformation</h2>
+						<h2>How Does Tailrec Work?</h2>
 					</section>
 					<section>
-						<p>Imperative</p>
+						<p>Your Code</p>
 						<pre><code class="scala">
 class Foo{
-  def size(lst: List[_]): Int ={
-    var cnt = 0
-    var current = lst
-    while(current != Nil){
-      current = lst.tail
-      cnt += 1
-    }
-    cnt
-  }
-}
-						</code></pre>
-						does this really make sense here? Don't think so...
-					</section>
-					<section>
-						<p>Functional</p>
-						<pre><code class="scala">
-class Foo{
-  def size(lst: List[_]): Int = _size(lst, 0)
-  @tailrec private def _size(lst: List[_], cnt: Int): Int =
-    if(x == Nil) cnt else _size(lst.tail, cnt+1)
+  @tailrec final def count(lst: List[_], cnt: Int=0): Int =
+    if(x == Nil) cnt else count(lst.tail, cnt+1)
 }
 						</code></pre>
 					</section>
 					<section>
-						<p>Labled Statements</p>
+						<p>Conceptually Transformed</p>
 						<pre><code class="scala">
 class Foo{
-  def size(list: List[_]): Int ={
+  def count(list: List[_], cnt: Int=0): Int ={
     var _list = list
-    var cnt = 0
-    label _size:
-      if(_list == Nil) cnt else{
+    var _cnt = cnt
+    label _count:
+      if(_list == Nil) _cnt else{
         _list = _list.tail
-        cnt += 1
-        break _size
+        _cnt += 1
+        break _count
       }
   }
 }
@@ -197,15 +212,24 @@ class Foo{
         [968]x
     };
 					</code></pre>
+					<aside class="notes">
+						<ol>
+							<li>Exceptions get mapped</li>
+							<li>Compilation errors get mapped</li>
+							<li>Position numbers can be out of order at byte code level</li>
+						</ol>
+					</aside>
 					</section>
 				</section>
 				<section>
-					<section>Difficulty of mutual recursion/how twotails works
-						<ol>Points to cover
-							<li>jump points are rigid</li>
-							<li>2ndary function causes stack trace shenanigans</li>
-							<li>function size limits</li>
-						</ol>
+					<section>
+						<h2>How Does Mutualrec Work?</h2>
+						<aside class="notes">
+							<ol>
+								<li>Come out and say using tailrec under the hood</li>
+								<li>Plans to change that due to compilation errors</li>
+							</ol>
+						</aside>
 					</section>
 					<section>
 					<p>Labels are rigid</p>
@@ -223,8 +247,13 @@ def bar(x: Int): Int ={
     }
 }
 					</code></pre>
-					<p>won't compile</p>
-					<p>NOTE: have "large methods" follow this and how mutualrec works</p>
+					<aside class="notes">
+						<ol>
+							<li>Forces me to use a 2ndry function</li>
+							<li>Only the byte code sees this</li>
+							<li>That function gets tailrec'd</li>
+						</ol>
+					</aside>
 					</section>
 					<section>
 						<p>Exceptions are Diverted</p>
@@ -235,6 +264,12 @@ final class Chipmunk{
     if(x < 0) throw new Exception("bam!") else one(x-1)
 }
 						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Haven't written unit tests validating lines are correct</li>
+								<li>Code was squished to fit presentation</li>
+							</ol>
+						</aside>
 						<pre><code class="scala">
 java.lang.Exception: bam!
 	at twotails.Chipmunk.mutualrec_fn$0(BasicTest.scala:69)
@@ -246,19 +281,20 @@ java.lang.Exception: bam!
 					<section>
 						<p>Large Methods</p>
 						<blockquote>...a compiler writer can work around this bug by limiting the maximum size of the generated Java Virtual Machine code for any method...to 65534 bytes.</blockquote>
+						<aside class="notes">
+							<ol>
+								<li>Looking to add in plugin options</li>
+								<li>Have to test doesn't generate lots of small objects</li>
+							</ol>
+						</aside>
 					</section>
 				</section>
 				<section>
 					<section>
-					<p>This sucks combine issues, future plans and such</p>
-						<lo>Issues and Future plans
-							<li>cycles</li>
-							<li>method size compiler flag</li>
-							<li>get line positions in mutual_fn to line up</li>
-						</lo>
+						<h2>Final Thoughts</h2>
 					</section>
 					<section>
-						<p>Simple Cycles Only</p>
+						<p>Bug: Simple Cycles Only</p>
 						<pre><code class="scala">
 final class Bug{
   @mutualrec def one(x: Int): Int = if(x < 0) x else two(x-1)
@@ -267,11 +303,28 @@ final class Bug{
     if(x < 0) one(x) else two(x)
 }
 						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Looking to remove dependence on tailrec in 0.3.0</li>
+							</ol>
+						</aside>
 					</section>
-					<section></section>
-					<section></section>
+					<section>
+						<p><a href="www.github.com/Wheaties/TwoTails">www.github.com/Wheaties/TwoTails</a></p>
+						<pre><code class="scala">
+libraryDependencies ++= Seq(
+  compilerPlugin("com.github.wheaties" %% "twotails" % "0.2.0"),
+  "com.github.wheaties" %% "twotails-annotations" % "0.2.0"
+)
+						</code></pre>
+						<aside class="notes">
+							PRs are welcome
+						</aside>
+					</section>
+					<section>
+						<p><a href="https://twitter.com/OweinReese">@OweinReese</a></p>
+					</section>
 				</section>
-				<section>Who I am, repo link</section>
 			</div>
 		</div>
 
