@@ -141,6 +141,11 @@ final class TwoGroups{
     if(x < 0) y else three(x-1, y+1)
 }
 						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Important later on for method size limits</li>
+							</ol>
+						</aside>
 					</section>
 					<section>
 						<p>Effectively Final</p>
@@ -197,6 +202,11 @@ class Foo{
   }
 }
 						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Code rewriting transformation</li>
+							</ol>
+						</aside>
 					</section>
 					<section>
 					<p>Position Markers</p>
@@ -291,7 +301,7 @@ java.lang.Exception: bam!
 				</section>
 				<section>
 					<section>
-						<h2>Final Thoughts</h2>
+						<h2>Finally</h2>
 					</section>
 					<section>
 						<p>Bug: Simple Cycles Only</p>
@@ -311,17 +321,20 @@ final class Bug{
 					</section>
 					<section>
 						<p><a href="www.github.com/Wheaties/TwoTails">www.github.com/Wheaties/TwoTails</a></p>
+						<aside class="notes">
+							PRs are welcome
+						</aside>
+					</section>
+					<section>
 						<pre><code class="scala">
 libraryDependencies ++= Seq(
   compilerPlugin("com.github.wheaties" %% "twotails" % "0.2.0"),
   "com.github.wheaties" %% "twotails-annotations" % "0.2.0"
 )
 						</code></pre>
-						<aside class="notes">
-							PRs are welcome
-						</aside>
 					</section>
 					<section>
+						<h2>Thank You</h2>
 						<p><a href="https://twitter.com/OweinReese">@OweinReese</a></p>
 					</section>
 				</section>
