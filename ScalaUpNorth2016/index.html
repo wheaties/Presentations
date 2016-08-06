@@ -96,10 +96,62 @@ scala> object NoOverflow{
 scala> NoOverflow.one(76000)
 res0: 76001
 						</code></pre>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>Why Use It?</h2>
+					</section>
+					<section>
+						<p>Data Structures for Code</p>
+						<pre><code class="scala">
+class BouncyCode{
+  private def one(t: Thing): Trampoline[Out] = { ... }
+  private def two(t: Thing): Trampoline[Out] = { ... }
+  def three(t: Thing): Out = one(t).run()
+}
+						</code></pre>
+						<pre><code class="scala">
+class JustCode{
+  @mutualrec final one(t: Thing): Out = { ... }
+  @mutualrec private two(t: Thing): Out = { ... }
+}
+						</code></pre>
 						<aside class="notes">
-							<p>Why you want to use:</p>
 							<ol>
-								<li>Don't have to use Trampolines. No object allocations. No GC pressure</li>
+								<li>Don't have to use Trampolines.</li>
+								<li>No object allocations.</li>
+								<li>No GC pressure</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<p>Clarity</p>
+						<pre><code class="scala">
+class LongMethod{
+  @tailrec final thing(x: Int, y: Int): Int ={
+    //do stuff
+    if(predicate(x, y, stuff)){
+      if(pred1(x, y, more, stuff)) thing(0, x)
+      //do more stuff...
+      if(pred2(x, y, even, more, stuff)) //yup...
+    }
+    //keep going...
+  }
+}
+						</code></pre>
+						<pre><code class="scala">
+class ManySmallMethods{
+  @mutualrec final thing(x: Int, y: Int): Int ={
+    //do stuff
+    if(predicate(x, y, stuff)) interloop(x, y, stuff)
+    else replace(x, y, stuff)
+  }
+  @mutualrec private replace(x: Int, y: Int, stuff: Stuff): Int =
+}
+						</code></pre>
+						<aside class="notes">
+							<ol>
 								<li>break up large tailrec functions</li>
 								<li>Punch someone in the facw who writes 400 line function</li>
 							</ol>
@@ -108,7 +160,12 @@ res0: 76001
 				</section>
 				<section>
 					<section>
-						<h2>Using TwoTails</h2>
+						<h2>How To Use TwoTails</h2>
+						<aside class="notes">
+							<ol>
+								<li>around 4-5min mark</li>
+							</ol>
+						</aside>
 					</section>
 					<section>
 						<p>Add a Dependency</p>
@@ -176,6 +233,11 @@ def yo(z: Int): Int ={
 				<section>
 					<section>
 						<h2>How Does Tailrec Work?</h2>
+						<aside class="notes">
+							<ol>
+								<li>around 9-10min mark</li>
+							</ol>
+						</aside>
 					</section>
 					<section>
 						<p>Your Code</p>
@@ -227,6 +289,7 @@ class Foo{
 							<li>Exceptions get mapped</li>
 							<li>Compilation errors get mapped</li>
 							<li>Position numbers can be out of order at byte code level</li>
+							<li>Parsing raw scala file</li>
 						</ol>
 					</aside>
 					</section>
