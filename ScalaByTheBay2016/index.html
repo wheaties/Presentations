@@ -37,23 +37,18 @@
 					</aside>
 				</section>
 				<section>
-					<h2>stuff</h2>
-					<p>--</p>
+					<h2>Code</h2>
+					<p><a href="http://www.github.com/Wheaties/sbtb-2016">http://www.github.com/wheaties/sbtb-2016</a></p>
+					<h2>Requirements</h2>
 					<ol>
-						<li>Come up with an example imperative to convert</li>
-						<li>Come up with an example imperative using Futures
-							<ol>
-								<li>Ok, come up with DB thing where the exceptions matter and/or a version field needs to matter so "count" could be 0.</li>
-								<li>That is, just working off Failure isn't enough</li>
-							</ol>
-						</li>
-						<li></li>
+						<li>SBT</li>
+						<li>JRE 1.7+ installed</li>
 					</ol>
 				</section>
 				<section>
 					<h2>Naive Tree Traversal</h2>
 					<pre><code class="scala hljs">
-trait Tree
+sealed trait Tree
 case class Node(left: Tree, right: Tree) extends Tree
 case class Empty extends Tree
 					</code></pre>
@@ -66,35 +61,35 @@ case class Empty extends Tree
 				</section>
 				<section>
 					<h2>Imperative</h2>
-					<pre><code class="scala hljs">import scala.collections.mutable.{ Map => MMap }
-
+					<pre><code class="scala hljs">
 def longest(tree: Tree): Int ={
-  val search = MMap(0 -> tree)
-  var longest = 0
+  val search = (0, tree) :: Nil
+  var value = 0
   while(search.nonEmpty){
-    val current = search.head //can't use an iterator
-    current match{
-      case (v, Node(Empty, Empty)) => longest = Math.max(longest, v)
-      case (v, Node(left, Empty)) => search += (v+1, left)
-      case (v, Node(Empty, right)) => search += (v+1, right)
-      case (v, Node(left, right)) => search ++= MMap(v+1 -> left, v+1 -> right)
+    val (v, current) :: tail = search
+    search = current match{
+      case Node(Empty, Empty) => tail
+      case Node(left, Empty) => (v+1, left) :: tail
+      case Node(Empty, right) => (v+1, right) :: tail
+      case Node(left, right) => (v+1, left) :: (v+1, right) :: tail
     }
-    search -= current
+    value = Math.max(value, v) //could move to case Node(Empty, Empty) =>
   }
-  longest
+  value
 }
 					</code></pre>
 					<aside class="notes">
 						<ol>
-							<li>Max comparison made only at leaves</li>
+							<li>Depth First search</li>
 							<li>Half of code is state management</li>
+							<li>Function is referentially transparent</li>
 						</ol>
 					</aside>
 				</section>
 				<section>
 					<h2>Recursive</h2>
 					<pre><code class="scala hljs">
-def longest(tree: tree): Int = tree match{
+def longest(tree: Tree): Int = tree match{
   case Node(Empty, Empty) => 0
   case Node(left, Empty) => 1 + longest(left)
   case Node(Empty, right) => 1 + longest(right)
@@ -104,7 +99,7 @@ def longest(tree: tree): Int = tree match{
 					<aside class="notes">
 						<ol>
 							<li>There is no state to manage</li>
-							<li>5 vs 13 SLOC</li>
+							<li>5 vs 11 SLOC</li>
 							<li>Max comparison made every loop.</li>
 						</ol>
 					</aside>
@@ -113,18 +108,22 @@ def longest(tree: tree): Int = tree match{
 					<section>
 						<h2>Tail Recursion</h2>
 						<pre><code class="scala hljs">
-def longest(rem: List[(Int, Tree)], value: Int = 0): Int = 
+def longest(tree: Tree): Int = find((0, tree) :: Nil, 0)
+
+private def find(rem: List[(Int, Tree)], value: Int): Int = 
   rem match{
     case Nil => value
-    case (v, Node(Empty, Empty)) :: t => longest(t, Math.max(v, value))
-    case (v, Node(left, Empty)) :: t => longest((v+1, left) :: t, value)
-    case (v, Node(Empty, right)) :: t => longest((v+1, right) :: t, value)
-    case (v, Node(left, right)) :: t => longest((v+1, left) :: (v+1, right) :: t, value)
+    case (v, Node(Empty, Empty)) :: t => find(t, Math.max(v, value))
+    case (v, Node(left, Empty)) :: t => find((v+1, left) :: t, value)
+    case (v, Node(Empty, right)) :: t => find((v+1, right) :: t, value)
+    case (v, Node(left, right)) :: t => find((v+1, left) :: (v+1, right) :: t, value)
   }
 						</code></pre>
 						<aside class="notes">
 							<ol>
 								<li>Only need to check condition at leaves.</li>
+								<li>Using "trick" to preserve signature</li>
+								<li>6 vs 11 SLOC + an indirection</li>
 							</ol>
 						</aside>
 					</section>
@@ -138,9 +137,13 @@ def function(args) =
 						<div class="fragment">
 							<pre><code class="python hljs">
 def function(args)(state) = 
-  if(predicate(state)) value(state)
+  if(predicate(args, state)) value(args, state)
   else function(args)('state')
 						</code></pre>
+						<aside class="notes">
+							<li>args are really fixed args and state management</li>
+							<li>nice way to lay out code is separate state from args (assuming default values for all state)</li>
+						</aside>
 						</div>
 					</section>
 					<section>
@@ -149,13 +152,36 @@ def function(args)(state) =
 def function(args)(state) ={
   state0 = state
   labelName:
-    if(predicate(state0)) value(state0)
+    if(predicate(args, state0)) value(args, state0)
     else{
       state0 = 'state'
       goto labelName
     }
 }
 						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Talk about shape of stack frame</li>
+								<li>Why plain recursive doesn't allow for this transformation</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<h2>@tailrec</h2>
+						<pre><code class="scala hljs">
+import scala.annotations.tailrec
+
+@tailrec def size(list: List[_], cnt: Int = 0): Int = list match{
+  case head :: tail => size(tail, cnt+1)
+  case Nil => cnt
+}
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Mention how it's not technically needed.</li>
+								<li>Also why you'd still want to use it.</li>
+							</ol>
+						</aside>
 					</section>
 				</section>
 				<section>
@@ -175,6 +201,11 @@ def retry[A](f: => Future[A], times: Int = 1): Future[A] ={
   value
 }
 						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>subtle bug with "times," i.e. can be less than 0</li>
+							</ol>
+						</aside>
 					</section>
 					<section>
 						<h2>Recursively</h2>
@@ -184,24 +215,40 @@ def retry[A](f: => Future[A], times: Int = 1): Future[A] ={
   else f.recoverWith{ case _ => retry(f, times-1) }
 }
 						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Mention why we can't directly pass Future into retry.</li>
+							</ol>
+						</aside>
 					</section>
 					<section>
 						<h2>Tail Recursively</h2>
-						<pre><code class="scala hljs">
-}
+						<pre><code class="scala hljs">import scala.annotations.tailrec
+
 def retry[A](f: => Future[A], times: Int = 1): Future[A] ={
-  def redo(fut: Future[A], rem: Int): Future[A] ={
+  @tailrec def redo(fut: Future[A], rem: Int): Future[A] ={
     if(rem < 1) fut
     else redo(fut.recoverWith{ case _ => f }, rem-1)
   }
   redo(f, times)
 }
 						</code></pre>
-					</section>
+						<aside class="notes">
+							<ol>
+								<li>Talk about the recursive safety of "map" and "bind" on Future</li>
+								<li>Mention most but not all Monads are like this, i.e. Free</li>
+							</ol>
+						</aside>
+					</section>					
 				</section>
 				<section>
-					<h2>Mutual Tail Recursion</h2>
-					<pre><code class="scala hljs">
+					<h2>Convert Imperative</h2>
+					<small>(if we've got time)</small>
+				</section>
+				<section>
+					<section>
+						<h2>Mutual Tail Recursion</h2>
+						<pre><code class="scala hljs">
 case class Game(deck: List[Card], top: Card, pile: List[Card])
 
 object BestMove extends GameStragey{
@@ -217,7 +264,56 @@ object BestMove extends GameStragey{
     }
   //rest of code...
 }
-					</code></pre>
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Mention how and why Scala lacks this language feature</li>
+								<li>Only available as a plugin</li>
+								<li>Briefly describe why you'd want to use mutual recursion</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<h2>TwoTails</h2>
+						<pre><code class="scala hljs">import twotails.mutualrec
+
+object BestMove extends GameStragey{
+  @mutualrec def next(game: Game, player: List[Card]): (Game, List[Card]) = //...
+
+  @mutualrec def drawCard(game: Game, player: List[Card]): (Game, List[Card]) = //...
+}
+						</code></pre>
+					</section>
+					<section>
+						<h2>Similar Rules to Tailrec</h2>
+						<pre><code class="scala hljs">
+final class WontCompile{
+  @mutualrec def one(x: Int): Int = if(x < 0) 0 else two(0, x)
+  @mutualrec def two(base: Int, x: Int): Int = 
+    if(x < 0) Num.base(base)(x) else one(x+1)
+}
+						</code></pre>
+						<p>...but type signatures must match</p>
+					</section>
+					<section>
+						<h2>Get it at</h2>
+						<a href="http://www.github.com/wheaties/TwoTails">http://www.github.com/wheaties/TwoTails</a>
+						<pre><code class="scala hljs">
+libraryDependencies ++= Seq(
+  compilerPlugin("com.github.wheaties" %% "twotails" % "0.2.0"),
+  "com.github.wheaties" %% "twotails-annotations" % "0.2.0"
+)
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Mention current limitations</li>
+							</ol>
+						</aside>
+					</section>
+				</section>
+				<section>
+					<h2>Thank You</h2>
+					<a href="http://www.twitter.com/OweinReese">@OweinReese</a>
 				</section>
 			</div>
 		</div>
