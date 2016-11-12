@@ -168,8 +168,7 @@ def function(args)(state) ={
 					</section>
 					<section>
 						<h2>@tailrec</h2>
-						<pre><code class="scala hljs">
-import scala.annotations.tailrec
+						<pre><code class="scala hljs">import scala.annotation.tailrec
 
 @tailrec def size(list: List[_], cnt: Int = 0): Int = list match{
   case head :: tail => size(tail, cnt+1)
@@ -189,23 +188,89 @@ import scala.annotations.tailrec
 				</section>
 				<section>
 					<section>
-						<h2>Building On Futures</h2>
-						<pre><code class="scala hljs">
-def retry[A](f: => Future[A], times: Int = 1): Future[A] ={
-  var value = f
-  var counter = 0
-  while(counter != times){
-    value = value.recoverWith{ case _ => f }
-    counter += 1
-  }
-  value
+						<h2>Mutual Tail Recursion</h2>
+						<pre><code class="scala hljs">import twotails.mutualrec
+
+final class MutualTailRecursion{
+  @mutualrec def ping(x: Int, times: Int=0): Int =
+    if(x < 1) times else pong(x-1, times+1)
+
+  @mutualrec def pong(x: Int, times: Int=0): Int =
+    if(x < 0) pong(-x, times) else ping(x-1, times+1)
 }
 						</code></pre>
 						<aside class="notes">
 							<ol>
-								<li>subtle bug with "times," i.e. can be less than 0</li>
+								<li>Mention how and why Scala lacks this language feature</li>
+								<li>Only available as a plugin</li>
+								<li>Briefly describe why you'd want to use mutual recursion</li>
 							</ol>
 						</aside>
+					</section>
+					<section>
+						<h2>Similar Rules to Tailrec</h2>
+						<pre><code class="scala hljs">import twotails.mutualrec
+
+final class WontCompile{
+  @mutualrec def one(x: Int): Int = if(x < 0) 0 else two(0, x)
+  @mutualrec def two(base: Int, x: Int): Int = 
+    if(x < 0) Num.base(base)(x) else one(x+1)
+}
+						</code></pre>
+						<p>...but type signatures must match</p>
+					</section>
+					<section>
+						<h2>Automatic Recursive Grouping</h2>
+						<pre><code class="scala hljs">import twotails.mutualrec
+
+final class WillCompile{
+  @mutualrec def one(x: Int): Int = if(x < 0) 1 else two(x-1)
+  @mutualrec def two(x: Int): Int = if(x < 0) 2 else one(x-1)
+
+  @mutualrec def foo(x: Int, y: Int): Int = 
+    if(x < 0) foo(-x, y) else bar(x-1, y+1)
+
+  @mutualrec def bar(x: Int, y: Int): Int =
+    if(x < 0) y else foo(x-1, y)
+}
+						</code></pre>
+						<p>two different pairings</p>
+					</section>
+					<section>
+						<h2>Get it at</h2>
+						<a href="http://www.github.com/wheaties/TwoTails">http://www.github.com/wheaties/TwoTails</a>
+						<pre><code class="scala hljs">
+libraryDependencies ++= Seq(
+  compilerPlugin("com.github.wheaties" %% "twotails" % "0.3.0"),
+  "com.github.wheaties" %% "twotails-annotations" % "0.3.0"
+)
+						</code></pre>
+						<p>shameless plug</p>
+						<aside class="notes">
+							<ol>
+								<li>Mention current limitations</li>
+							</ol>
+						</aside>
+					</section>
+				</section>
+				<section>
+					<h2>Working Example</h2>
+				</section>
+				<section>
+					<section>
+						<h2>Recursion With Futures</h2>
+						<pre><code class="scala hljs">
+def retry[A](f: => Future[A], times: Int = 1): Future[A] ={
+  var value = f
+  var counter = times
+  while(counter > 0){
+    value = value.recoverWith{ case _ => f }
+    counter -= 1
+  }
+  value
+}
+						</code></pre>
+						<p>an imperative example</p>
 					</section>
 					<section>
 						<h2>Recursively</h2>
@@ -244,72 +309,6 @@ def retry[A](f: => Future[A], times: Int = 1): Future[A] ={
 				<section>
 					<h2>Convert Imperative</h2>
 					<small>(if we've got time)</small>
-				</section>
-				<section>
-					<section>
-						<h2>Mutual Tail Recursion</h2>
-						<pre><code class="scala hljs">
-case class Game(deck: List[Card], top: Card, pile: List[Card])
-
-object BestMove extends GameStragey{
-  def next(game: Game, player: List[Card]): (Game, List[Card]) ={
-  	if(canMove(game.top, player)) makeMove(game, player)
-  	else drawCard(game, player)
-  }
-
-  def drawCard(game: Game, player: List[Card]): (Game, List[Card]) = 
-    deck match {
-      case head :: tail => next(Game(tail, top, pile), head :: player)
-      case Nil => drawCard(Game(shuffle(pile), top, Nil), player)
-    }
-  //rest of code...
-}
-						</code></pre>
-						<aside class="notes">
-							<ol>
-								<li>Mention how and why Scala lacks this language feature</li>
-								<li>Only available as a plugin</li>
-								<li>Briefly describe why you'd want to use mutual recursion</li>
-							</ol>
-						</aside>
-					</section>
-					<section>
-						<h2>TwoTails</h2>
-						<pre><code class="scala hljs">import twotails.mutualrec
-
-object BestMove extends GameStragey{
-  @mutualrec def next(game: Game, player: List[Card]): (Game, List[Card]) = //...
-
-  @mutualrec def drawCard(game: Game, player: List[Card]): (Game, List[Card]) = //...
-}
-						</code></pre>
-					</section>
-					<section>
-						<h2>Similar Rules to Tailrec</h2>
-						<pre><code class="scala hljs">
-final class WontCompile{
-  @mutualrec def one(x: Int): Int = if(x < 0) 0 else two(0, x)
-  @mutualrec def two(base: Int, x: Int): Int = 
-    if(x < 0) Num.base(base)(x) else one(x+1)
-}
-						</code></pre>
-						<p>...but type signatures must match</p>
-					</section>
-					<section>
-						<h2>Get it at</h2>
-						<a href="http://www.github.com/wheaties/TwoTails">http://www.github.com/wheaties/TwoTails</a>
-						<pre><code class="scala hljs">
-libraryDependencies ++= Seq(
-  compilerPlugin("com.github.wheaties" %% "twotails" % "0.2.0"),
-  "com.github.wheaties" %% "twotails-annotations" % "0.2.0"
-)
-						</code></pre>
-						<aside class="notes">
-							<ol>
-								<li>Mention current limitations</li>
-							</ol>
-						</aside>
-					</section>
 				</section>
 				<section>
 					<h2>Thank You</h2>
