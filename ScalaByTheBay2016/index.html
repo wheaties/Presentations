@@ -63,7 +63,7 @@ case class Empty extends Tree
 					<h2>Imperative</h2>
 					<pre><code class="scala hljs">
 def longest(tree: Tree): Int ={
-  val search = (0, tree) :: Nil
+  var search = (0, tree) :: Nil
   var value = 0
   while(search.nonEmpty){
     val (v, current) :: tail = search
