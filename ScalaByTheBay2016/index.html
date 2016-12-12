@@ -1,0 +1,339 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Don't Blow Your Stack</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/beige.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/pojoaque.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h1>Don't Blow Your Stack</h1>
+					<h2>Recursive Functions for Everyone</h2>
+					<p>
+						<small><a href="https://twitter.com/OweinReese">@OweinReese</a></small>
+					</p>
+					<aside class="notes">
+						<ol>
+							<li></li>
+						</ol>
+					</aside>
+				</section>
+				<section>
+					<h2>Code</h2>
+					<p><a href="http://www.github.com/Wheaties/sbtb-2016">http://www.github.com/wheaties/sbtb-2016</a></p>
+					<h2>Requirements</h2>
+					<ol>
+						<li>SBT</li>
+						<li>JRE 1.7+ installed</li>
+					</ol>
+				</section>
+				<section>
+					<h2>Naive Tree Traversal</h2>
+					<pre><code class="scala hljs">
+sealed trait Tree
+case class Node(left: Tree, right: Tree) extends Tree
+case class Empty extends Tree
+					</code></pre>
+					<aside class="notes">
+						<ol>
+							<li>No loops</li>
+							<li>non-empty, i.e. at least 1 Node</li>
+						</ol>
+					</aside>
+				</section>
+				<section>
+					<h2>Imperative</h2>
+					<pre><code class="scala hljs">
+def longest(tree: Tree): Int ={
+  var search = (0, tree) :: Nil
+  var value = 0
+  while(search.nonEmpty){
+    val (v, current) :: tail = search
+    search = current match{
+      case Node(Empty, Empty) => tail
+      case Node(left, Empty) => (v+1, left) :: tail
+      case Node(Empty, right) => (v+1, right) :: tail
+      case Node(left, right) => (v+1, left) :: (v+1, right) :: tail
+    }
+    value = Math.max(value, v) //could move to case Node(Empty, Empty) =>
+  }
+  value
+}
+					</code></pre>
+					<aside class="notes">
+						<ol>
+							<li>Depth First search</li>
+							<li>Half of code is state management</li>
+							<li>Function is referentially transparent</li>
+						</ol>
+					</aside>
+				</section>
+				<section>
+					<h2>Recursive</h2>
+					<pre><code class="scala hljs">
+def longest(tree: Tree): Int = tree match{
+  case Node(Empty, Empty) => 0
+  case Node(left, Empty) => 1 + longest(left)
+  case Node(Empty, right) => 1 + longest(right)
+  case Node(left, right) => 1 + Math.max(longest(left), longest(right))
+}
+					</code></pre>
+					<aside class="notes">
+						<ol>
+							<li>There is no state to manage</li>
+							<li>5 vs 11 SLOC</li>
+							<li>Max comparison made every loop.</li>
+						</ol>
+					</aside>
+				</section>
+				<section>
+					<section>
+						<h2>Tail Recursion</h2>
+						<pre><code class="scala hljs">
+def longest(tree: Tree): Int = find((0, tree) :: Nil, 0)
+
+private def find(rem: List[(Int, Tree)], value: Int): Int = 
+  rem match{
+    case Nil => value
+    case (v, Node(Empty, Empty)) :: t => find(t, Math.max(v, value))
+    case (v, Node(left, Empty)) :: t => find((v+1, left) :: t, value)
+    case (v, Node(Empty, right)) :: t => find((v+1, right) :: t, value)
+    case (v, Node(left, right)) :: t => find((v+1, left) :: (v+1, right) :: t, value)
+  }
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Only need to check condition at leaves.</li>
+								<li>Using "trick" to preserve signature</li>
+								<li>6 vs 11 SLOC + an indirection</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<h2>Tail Recursive Pattern</h2>
+						<pre><code class="python hljs">
+def function(args) = 
+  if(predicate(args)) value(args)
+  else function('args')
+						</code></pre>
+						<div class="fragment">
+							<pre><code class="python hljs">
+def function(args)(state) = 
+  if(predicate(args, state)) value(args, state)
+  else function(args)('state')
+						</code></pre>
+						<aside class="notes">
+							<li>args are really fixed args and state management</li>
+							<li>nice way to lay out code is separate state from args (assuming default values for all state)</li>
+						</aside>
+						</div>
+					</section>
+					<section>
+						<h2>Scalac Compiler</h2>
+						<pre><code class="python hljs">
+def function(args)(state) ={
+  state0 = state
+  labelName:
+    if(predicate(args, state0)) value(args, state0)
+    else{
+      state0 = 'state'
+      goto labelName
+    }
+}
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Talk about shape of stack frame</li>
+								<li>Why plain recursive doesn't allow for this transformation</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<h2>@tailrec</h2>
+						<pre><code class="scala hljs">import scala.annotation.tailrec
+
+@tailrec def size(list: List[_], cnt: Int = 0): Int = list match{
+  case head :: tail => size(tail, cnt+1)
+  case Nil => cnt
+}
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Mention how it's not technically needed.</li>
+								<li>Also why you'd still want to use it.</li>
+							</ol>
+						</aside>
+					</section>
+				</section>
+				<section>
+					<h2>Converting Imperative</h2>
+				</section>
+				<section>
+					<section>
+						<h2>Mutual Tail Recursion</h2>
+						<pre><code class="scala hljs">import twotails.mutualrec
+
+final class MutualTailRecursion{
+  @mutualrec def ping(x: Int, times: Int=0): Int =
+    if(x < 1) times else pong(x-1, times+1)
+
+  @mutualrec def pong(x: Int, times: Int=0): Int =
+    if(x < 0) pong(-x, times) else ping(x-1, times+1)
+}
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Mention how and why Scala lacks this language feature</li>
+								<li>Only available as a plugin</li>
+								<li>Briefly describe why you'd want to use mutual recursion</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<h2>Similar Rules to Tailrec</h2>
+						<pre><code class="scala hljs">import twotails.mutualrec
+
+final class WontCompile{
+  @mutualrec def one(x: Int): Int = if(x < 0) 0 else two(0, x)
+  @mutualrec def two(base: Int, x: Int): Int = 
+    if(x < 0) Num.base(base)(x) else one(x+1)
+}
+						</code></pre>
+						<p>...but type signatures must match</p>
+					</section>
+					<section>
+						<h2>Automatic Recursive Grouping</h2>
+						<pre><code class="scala hljs">import twotails.mutualrec
+
+final class WillCompile{
+  @mutualrec def one(x: Int): Int = if(x < 0) 1 else two(x-1)
+  @mutualrec def two(x: Int): Int = if(x < 0) 2 else one(x-1)
+
+  @mutualrec def foo(x: Int, y: Int): Int = 
+    if(x < 0) foo(-x, y) else bar(x-1, y+1)
+
+  @mutualrec def bar(x: Int, y: Int): Int =
+    if(x < 0) y else foo(x-1, y)
+}
+						</code></pre>
+						<p>two different pairings</p>
+					</section>
+					<section>
+						<h2>Get it at</h2>
+						<a href="http://www.github.com/wheaties/TwoTails">http://www.github.com/wheaties/TwoTails</a>
+						<pre><code class="scala hljs">
+libraryDependencies ++= Seq(
+  compilerPlugin("com.github.wheaties" %% "twotails" % "0.3.0"),
+  "com.github.wheaties" %% "twotails-annotations" % "0.3.0"
+)
+						</code></pre>
+						<p>shameless plug</p>
+						<aside class="notes">
+							<ol>
+								<li>Mention current limitations</li>
+							</ol>
+						</aside>
+					</section>
+				</section>
+				<section>
+					<h2>Working Example</h2>
+				</section>
+				<section>
+					<section>
+						<h2>Recursion With Futures</h2>
+						<pre><code class="scala hljs">
+def retry[A](f: => Future[A], times: Int = 1): Future[A] ={
+  var value = f
+  var counter = times
+  while(counter > 0){
+    value = value.recoverWith{ case _ => f }
+    counter -= 1
+  }
+  value
+}
+						</code></pre>
+						<p>an imperative example</p>
+					</section>
+					<section>
+						<h2>Recursively</h2>
+						<pre><code class="scala hljs">
+def retry[A](f: => Future[A], times: Int = 1): Future[A] ={
+  if(times < 1) f 
+  else f.recoverWith{ case _ => retry(f, times-1) }
+}
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Mention why we can't directly pass Future into retry.</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<h2>Tail Recursively</h2>
+						<pre><code class="scala hljs">import scala.annotations.tailrec
+
+def retry[A](f: => Future[A], times: Int = 1): Future[A] ={
+  @tailrec def redo(fut: Future[A], rem: Int): Future[A] ={
+    if(rem < 1) fut
+    else redo(fut.recoverWith{ case _ => f }, rem-1)
+  }
+  redo(f, times)
+}
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Talk about the recursive safety of "map" and "bind" on Future</li>
+								<li>Mention most but not all Monads are like this, i.e. Free</li>
+							</ol>
+						</aside>
+					</section>					
+				</section>
+				<section>
+					<h2>Convert Imperative</h2>
+					<small>(if we've got time)</small>
+				</section>
+				<section>
+					<h2>Thank You</h2>
+					<a href="http://www.twitter.com/OweinReese">@OweinReese</a>
+				</section>
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+			Reveal.initialize({
+				history: true,
+				minScale: 0.7,
+				maxScale: 1.0,
+
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/notes-server/client.js', async: true }
+				]
+			});
+		</script>
+	</body>
+</html>
