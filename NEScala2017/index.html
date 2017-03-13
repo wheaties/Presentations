@@ -152,7 +152,35 @@ final class Foo{
 						</code></pre>
 					</section>
 					<section>
-						<img src="img/dont_worry_size.jpeg">
+						<h3>Transformation</h3>
+						<pre><code class="scala">
+  def methodA[X](x: X): X = if(pred(x)) f(x) else methodB(x)
+						</code></pre>
+						<p>Substitutions Required</p>
+						<table>
+							<tr>
+								<td>Type Params</td>
+								<td><pre><code class="scala">X(methodA)</code></pre></td>
+								<td>-></td>
+								<td><pre><code class="scala">X(mutual_fn$0)</code></pre></td>
+							</tr>
+							<tr>
+								<td>Args</td>
+								<td><pre><code class="scala">x(methodA)</code></pre></td>
+								<td>-></td>
+								<td><pre><code class="scala">x(mutual_fn$0)</code></pre></td>
+							</tr>
+							<tr>
+								<td>Apply</td>
+								<td><pre><code class="scala">methodB(...) </code></pre></td>
+								<td>-></td>
+								<td><pre><code class="scala">mutual_fn$0(1, ...)  </code></pre></td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h2>Success!</h2>
+						<img src="img/perfect.gif">
 					</section>
 					<section>
 						<p>TODO: compilation error</p>
@@ -166,6 +194,63 @@ final class Foo{
 								<li>notes</li>
 							</ol>
 						</aside>
+					</section>
+					<section>
+						<img src="img/dont_worry_size.jpeg">
+					</section>
+					<section>
+						<p>Start Here</p>
+						<pre><code class="scala">
+final class Foo{
+  def methodA(x: Int): Int = //code, depends on methodB...
+  def methodB(x: Int): Int = //code, depends on methodA...
+  //more...
+}
+						</code></pre>
+					</section>
+					<section>
+						<p>End Here</p>
+						<pre><code class="scala">
+import twotails.mutualrec
+
+final class Foo{
+  @mutualrec def methodA(x: Int): Int = //code, depends on methodB...
+  @mutualrec def methodB(x: Int): Int = //code, depends on methodA...
+  //more...
+}
+						</code></pre>
+					</section>
+					<section>
+						<p>Same Shape, sorta</p>
+						<pre><code class="scala">
+final class Foo{
+  private def mutual_fn$0(indx: Int, x: Int): Int = //but...
+  
+  def methodA(x: Int): Int = mutual_fn$0(0, x)
+  def methodB(x: Int): Int = mutual_fn$0(1, x)
+  //more...
+}
+						</code></pre>
+					</section>
+					<section>
+						<p>Next Route</p>
+						<pre><code class="scala">
+  private def mutual_fn$0(indx: Int, x: Int): Int = {
+    var indx$: Int = indx
+    var x$: Int = x
+    var cont$ = true
+    var result$: Int = 0
+    def methodA$(): Unit = //code for methodA
+    def methodB$(): Unit = //code for methodB
+    while(cont$){
+      indx$ match{
+        case 0 => methodA$()
+        case 1 => methodB$()
+      }
+    }
+    result$
+  }
+						</code></pre>
 					</section>
 					<section>
 						<h2>Stuff</h2>
