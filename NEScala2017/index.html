@@ -1,0 +1,227 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>A Tail of TwoTails</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/beige.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/pojoaque.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h1>A Tail of TwoTails</h1>
+					<h2>The Second Act</h2>
+					<p>
+						<small><a href="https://twitter.com/OweinReese">@OweinReese</a></small>
+					</p>
+					<aside class="notes">
+						<ol>
+							<li>What is Twotails</li>
+							<li>How the First Scheme Works</li>
+							<li>How the Second Scheme Works</li>
+							<li>Using</li>
+						</ol>
+					</aside>
+				</section>
+				<section>
+					<section>
+						<h2>Back To Basics</h2>
+					</section>
+					<section>
+						<p>General Recursion</p>
+						<pre><code class="scala">
+object MaxNode{ self =>
+  def apply(tree: Tree): Int = tree match{
+    case Leaf(v)           => v
+    case Tree(left, right) => Math.max(self(left), self(right))
+  }
+}
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Not stack safe</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<p>Tail Recursion</p>
+						<pre><code class="scala">
+import scala.annotation.tailrec
+
+final class Contains[A](value: A){ self =>
+  @tailrec def apply(rem: List[A]): Boolean = rem match{
+    case Nil          => false
+    case `value` :: t => true
+    case _ :: t       => self(t)
+  }
+}
+						</code></pre>
+						<aside class="notes">
+							<ul>
+								<li>made possible by tail call position</li>
+								<li>Transformed into a looping construct</li>
+							</ul>
+						</aside>
+					</section>
+					<section>
+						<p>Mutual Tail Recursion</p>
+						<pre><code class="scala">
+import twotails.mutualrec
+
+final class PingPong(value: Int){
+  @mutualrec def ping(x: Int): Int = if(x < value) x else pong(x - 1)
+  @mutualrec def pong(x: Int): Int = if(x < value) x else ping(x - 1)
+}
+						</code></pre>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>First Act Recap</h2>
+						<aside class="notes">
+							<ol>
+								<li>Don't have to use Trampolines.</li>
+								<li>No object allocations.</li>
+								<li>No GC pressure</li>
+								<li>Size/Optimization Constrained</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<img src="img/rental_sign.jpeg">
+						<aside class="notes">
+							<p>Compiler Plugin writing's missing sanity sign.</p>
+						</aside>
+					</section>
+					<section>
+						<p>Start Here</p>
+						<pre><code class="scala">
+final class Foo{
+  def methodA(x: Int): Int = //code, depends on methodB...
+  def methodB(x: Int): Int = //code, depends on methodA...
+  //more...
+}
+						</code></pre>
+					</section>
+					<section>
+						<p>End Here</p>
+						<pre><code class="scala">
+import twotails.mutualrec
+
+final class Foo{
+  @mutualrec def methodA(x: Int): Int = //code, depends on methodB...
+  @mutualrec def methodB(x: Int): Int = //code, depends on methodA...
+  //more...
+}
+						</code></pre>
+						<aside class="notes">
+							<ol>Goals
+								<li>No external dependency</li>
+								<li>Don't Reinvent Trampolines</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<p>One Route</p>
+						<pre><code class="scala">
+final class Foo{
+  @tailrec private def mutual_fn$0(indx: Int, x: Int): Int = indx match{
+    case 0 => //code for methodA...
+    case 1 => //code for methodB...
+  }
+  def methodA(x: Int): Int = mutual_fn$0(0, x)
+  def methodB(x: Int): Int = mutual_fn$0(1, x)
+  //more...
+}
+						</code></pre>
+					</section>
+					<section>
+						<img src="img/dont_worry_size.jpeg">
+					</section>
+					<section>
+						<p>TODO: compilation error</p>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>The Second Act</h2>
+						<aside class="notes">
+							<ol>
+								<li>notes</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<h2>Stuff</h2>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>Using</h2>
+						<aside class="notes">
+							<ol>
+								<li>notes</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<p>Stuff</p>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>In Conclusion</h2>
+					</section>
+					<section>
+						<p>Stuff</p>
+					</section>
+					<section>
+						<p><a href="www.github.com/Wheaties/TwoTails">www.github.com/Wheaties/TwoTails</a></p>
+						<aside class="notes">
+							PRs are welcome
+						</aside>
+					</section>
+					<section>
+						<h2>Thanks</h2>
+						<p><a href="https://twitter.com/OweinReese">@OweinReese</a></p>
+					</section>
+				</section>
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+			Reveal.initialize({
+				history: true,
+				minScale: 0.7,
+				maxScale: 1.0,
+
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/notes-server/client.js', async: true }
+				]
+			});
+		</script>
+	</body>
+</html>
