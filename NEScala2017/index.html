@@ -42,6 +42,7 @@
 				<section>
 					<section>
 						<h2>Back To Basics</h2>
+						<img src="img/base.gif">
 					</section>
 					<section>
 						<p>General Recursion</p>
@@ -49,7 +50,7 @@
 object MaxNode{ self =>
   def apply(tree: Tree): Int = tree match{
     case Leaf(v)           => v
-    case Tree(left, right) => Math.max(self(left), self(right))
+    case Node(left, right) => Math.max(self(left), self(right))
   }
 }
 						</code></pre>
@@ -94,6 +95,7 @@ final class PingPong(value: Int){
 				<section>
 					<section>
 						<h2>First Act Recap</h2>
+						<img src="img/dance.png">
 						<aside class="notes">
 							<ol>
 								<li>Don't have to use Trampolines.</li>
@@ -101,12 +103,6 @@ final class PingPong(value: Int){
 								<li>No GC pressure</li>
 								<li>Size/Optimization Constrained</li>
 							</ol>
-						</aside>
-					</section>
-					<section>
-						<img src="img/rental_sign.jpeg">
-						<aside class="notes">
-							<p>Compiler Plugin writing's missing sanity sign.</p>
 						</aside>
 					</section>
 					<section>
@@ -138,7 +134,7 @@ final class Foo{
 						</aside>
 					</section>
 					<section>
-						<p>One Route</p>
+						<p>First Scheme</p>
 						<pre><code class="scala">
 final class Foo{
   @tailrec private def mutual_fn$0(indx: Int, x: Int): Int = indx match{
@@ -152,7 +148,7 @@ final class Foo{
 						</code></pre>
 					</section>
 					<section>
-						<h3>Transformation</h3>
+						<h3>Fn Body Transformation</h3>
 						<pre><code class="scala">
   def methodA[X](x: X): X = if(pred(x)) f(x) else methodB(x)
 						</code></pre>
@@ -165,7 +161,7 @@ final class Foo{
 								<td><pre><code class="scala">X(mutual_fn$0)</code></pre></td>
 							</tr>
 							<tr>
-								<td>Args</td>
+								<td>Fn Args</td>
 								<td><pre><code class="scala">x(methodA)</code></pre></td>
 								<td>-></td>
 								<td><pre><code class="scala">x(mutual_fn$0)</code></pre></td>
@@ -189,14 +185,13 @@ final class Foo{
 				<section>
 					<section>
 						<h2>The Second Act</h2>
+						<img src="img/dont_worry_size.jpeg">
 						<aside class="notes">
-							<ol>
-								<li>notes</li>
+							<ol>Challenges
+								<li>Method size limitations</li>
+								<li>JVM large method optimization troubles</li>
 							</ol>
 						</aside>
-					</section>
-					<section>
-						<img src="img/dont_worry_size.jpeg">
 					</section>
 					<section>
 						<p>Start Here</p>
@@ -225,7 +220,7 @@ final class Foo{
 						<pre><code class="scala">
 final class Foo{
   private def mutual_fn$0(indx: Int, x: Int): Int = //but...
-  
+
   def methodA(x: Int): Int = mutual_fn$0(0, x)
   def methodB(x: Int): Int = mutual_fn$0(1, x)
   //more...
@@ -233,7 +228,7 @@ final class Foo{
 						</code></pre>
 					</section>
 					<section>
-						<p>Next Route</p>
+						<p>More Complicated</p>
 						<pre><code class="scala">
   private def mutual_fn$0(indx: Int, x: Int): Int = {
     var indx$: Int = indx
@@ -251,6 +246,41 @@ final class Foo{
     result$
   }
 						</code></pre>
+					</section>
+					<section>
+						<h3>Fn Body Transformation</h3>
+						<pre><code class="scala">
+  def methodA[X](x: X): X = if(pred(x)) f(x) else methodB(x)
+						</code></pre>
+						<p>Substitutions Required</p>
+						<table>
+							<tr>
+								<td>Type Params</td>
+								<td><pre><code class="scala">X(methodA)</code></pre></td>
+								<td>-></td>
+								<td><pre><code class="scala">X(mutual_fn$0)</code></pre></td>
+							</tr>
+							<tr>
+								<td>Fn Args</td>
+								<td><pre><code class="scala">x(methodA)</code></pre></td>
+								<td>-></td>
+								<td><pre><code class="scala">x$(mutual_fn$0)</code></pre></td>
+							</tr>
+							<tr>
+								<td>Apply</td>
+								<td><pre><code class="scala">methodB(y) </code></pre></td>
+								<td>-></td>
+								<td><pre><code class="scala">indx$ = 1
+x$ = y</code></pre></td>
+							</tr>
+							<tr>
+								<td>Termination</td>
+								<td><pre><code class="scala">f(x)</code></pre></td>
+								<td>-></td>
+								<td><pre><code class="scala">result$ = f(x$)
+cont$ = false    </code></pre></td>
+							</tr>
+						</table>
 					</section>
 					<section>
 						<h2>Stuff</h2>
