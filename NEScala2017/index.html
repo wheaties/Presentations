@@ -45,7 +45,7 @@
 						<img src="img/some_cake.jpeg">
 					</section>
 					<section>
-						<p>General Recursion</p>
+						<h3>General Recursion</h3>
 						<pre><code class="scala">
 object MaxNode{ self =>
   def apply(tree: Tree): Int = tree match{
@@ -61,7 +61,7 @@ object MaxNode{ self =>
 						</aside>
 					</section>
 					<section>
-						<p>Tail Recursion</p>
+						<h3>Tail Recursion</h3>
 						<pre><code class="scala">
 import scala.annotation.tailrec
 
@@ -81,7 +81,7 @@ final class Contains[A](value: A){ self =>
 						</aside>
 					</section>
 					<section>
-						<p>Mutual Tail Recursion</p>
+						<h3>Mutual Tail Recursion</h3>
 						<pre><code class="scala">
 import twotails.mutualrec
 
@@ -96,7 +96,6 @@ final class PingPong(value: Int){
 					<section>
 						<h2>First Act Recap</h2>
 						<img src="img/dance.png">
-						<p>version 0.3.2</p>
 						<aside class="notes">
 							<ol>
 								<li>Don't have to use Trampolines.</li>
@@ -107,7 +106,7 @@ final class PingPong(value: Int){
 						</aside>
 					</section>
 					<section>
-						<p>Start Here</p>
+						<h3>Start Here</h3>
 						<pre><code class="scala">
 final class Foo{
   def methodA(x: Int): Int = //code, depends on methodB...
@@ -117,7 +116,7 @@ final class Foo{
 						</code></pre>
 					</section>
 					<section>
-						<p>End Here</p>
+						<h3>End Here</h3>
 						<pre><code class="scala">
 import twotails.mutualrec
 
@@ -135,7 +134,7 @@ final class Foo{
 						</aside>
 					</section>
 					<section>
-						<p>First Scheme</p>
+						<h3>First Scheme</h3>
 						<pre><code class="scala">
 final class Foo{
   @tailrec private def mutual_fn$0(indx: Int, x: Int): Int = indx match{
@@ -178,6 +177,7 @@ final class Foo{
 					<section>
 						<h2>Success!</h2>
 						<img src="img/perfect.gif">
+						<p>version 0.3.1</p>
 					</section>
 					<section>
 						<p>TODO: compilation error</p>
@@ -195,7 +195,7 @@ final class Foo{
 						</aside>
 					</section>
 					<section>
-						<p>Start Here</p>
+						<h3>Start Here</h3>
 						<pre><code class="scala">
 final class Foo{
   def methodA(x: Int): Int = //code, depends on methodB...
@@ -205,7 +205,7 @@ final class Foo{
 						</code></pre>
 					</section>
 					<section>
-						<p>End Here</p>
+						<h3>End Here</h3>
 						<pre><code class="scala">
 import twotails.mutualrec
 
@@ -217,7 +217,7 @@ final class Foo{
 						</code></pre>
 					</section>
 					<section>
-						<p>Same Shape, sorta</p>
+						<h3>Same Shape, sorta</h3>
 						<pre><code class="scala">
 final class Foo{
   private def mutual_fn$0(indx: Int, x: Int): Int = //but...
@@ -229,7 +229,7 @@ final class Foo{
 						</code></pre>
 					</section>
 					<section>
-						<p>More Complicated</p>
+						<h3>More Complicated</h3>
 						<pre><code class="scala">
   private def mutual_fn$0(indx: Int, x: Int): Int = {
     var indx$: Int = indx
@@ -299,7 +299,7 @@ cont$ = false    </code></pre></td>
 						</aside>
 					</section>
 					<section>
-						<p>Include</p>
+						<h3>Include</h3>
 						<pre><code class="scala">
 libraryDependencies ++= Seq(
   compilerPlugin("com.github.wheaties" %% "twotails" % "0.3.1" cross CrossVersion.full),
@@ -307,17 +307,10 @@ libraryDependencies ++= Seq(
 )
 						</code></pre>
 					</section>
-				</section>
-				<section>
 					<section>
-						<h2>In Conclusion</h2>
-					</section>
-					
-					<section>
+						<h3>Bug Reports</h3>
 						<p><a href="www.github.com/Wheaties/TwoTails">www.github.com/Wheaties/TwoTails</a></p>
-						<aside class="notes">
-							PRs are welcome
-						</aside>
+						<small>(contributions too!)</small>
 					</section>
 					<section>
 						<h2>Thanks</h2>
