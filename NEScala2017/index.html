@@ -98,10 +98,7 @@ final class PingPong(value: Int){
 						<img src="img/dance.png">
 						<aside class="notes">
 							<ol>
-								<li>Don't have to use Trampolines.</li>
-								<li>No object allocations.</li>
-								<li>No GC pressure</li>
-								<li>Size/Optimization Constrained</li>
+								<li>First introduced ScalaUpNorth, Montreal, QC 2016</li>
 							</ol>
 						</aside>
 					</section>
@@ -127,9 +124,11 @@ final class Foo{
 }
 						</code></pre>
 						<aside class="notes">
-							<ol>Goals
+							<ol>
 								<li>No external dependency</li>
-								<li>Don't Reinvent Trampolines</li>
+								<li>Don't use or reinvent Trampolines.</li>
+								<li>No object allocations.</li>
+								<li>Talk about tailrec isomorphism</li>
 							</ol>
 						</aside>
 					</section>
@@ -227,6 +226,11 @@ final class Foo{
   //more...
 }
 						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>No tailrec</li>
+							</ol>
+						</aside>
 					</section>
 					<section>
 						<h3>More Complicated</h3>
@@ -284,7 +288,7 @@ cont$ = false    </code></pre></td>
 						</table>
 					</section>
 					<section>
-						<h2>Finally</h2>
+						<h2>Happy</h2>
 						<img src="img/everyone_dance.gif">
 					</section>
 				</section>
@@ -305,6 +309,23 @@ libraryDependencies ++= Seq(
   compilerPlugin("com.github.wheaties" %% "twotails" % "0.3.1" cross CrossVersion.full),
   "com.github.wheaties" %% "twotails-annotations" % "0.3.1" cross CrossVersion.full
 )
+						</code></pre>
+						<p>or</p>
+						<pre><code class="scala">
+libraryDependencies ++= Seq(
+  compilerPlugin("com.github.wheaties" %% "twotails" % "0.4.0-SNAPSHOT" cross CrossVersion.full),
+  "com.github.wheaties" %% "twotails-annotations" % "0.4.0-SNAPSHOT" cross CrossVersion.full
+)
+						</code></pre>
+					</section>
+					<section>
+						<h3>Plugin Options</h3>
+						<pre><code class="scala">
+scalacOptions += "-Ptwotails:size" //equivalent to no options
+						</code></pre>
+						<p>or</p>
+						<pre><code class="scala">
+scalacOptions += "-Ptwotails:memory" //optimize for method allocations
 						</code></pre>
 					</section>
 					<section>
