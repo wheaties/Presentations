@@ -47,10 +47,10 @@
 					<section>
 						<h3>General Recursion</h3>
 						<pre><code class="scala">
-object MaxNode{ self =>
-  def apply(tree: Tree): Int = tree match{
+object MaxNode{ 
+  def find(tree: Tree): Int = tree match{
     case Leaf(v)           => v
-    case Node(left, right) => Math.max(self(left), self(right))
+    case Node(left, right) => Math.max(find(left), find(right))
   }
 }
 						</code></pre>
@@ -65,11 +65,11 @@ object MaxNode{ self =>
 						<pre><code class="scala">
 import scala.annotation.tailrec
 
-final class Contains[A](value: A){ self =>
-  @tailrec def apply(rem: List[A]): Boolean = rem match{
+final class Contains[A](value: A){
+  @tailrec def contains(rem: List[A]): Boolean = rem match{
     case Nil          => false
     case `value` :: t => true
-    case _ :: t       => self(t)
+    case _ :: t       => contains(t)
   }
 }
 						</code></pre>
@@ -83,11 +83,9 @@ final class Contains[A](value: A){ self =>
 					<section>
 						<h3>Mutual Tail Recursion</h3>
 						<pre><code class="scala">
-import twotails.mutualrec
-
 final class PingPong(value: Int){
-  @mutualrec def ping(x: Int): Int = if(x < value) x else pong(x - 1)
-  @mutualrec def pong(x: Int): Int = if(x < value) x else ping(x - 1)
+  def ping(x: Int): Int = if(x < value) x else pong(x - 1)
+  def pong(x: Int): Int = if(x < value) x else ping(x - 1)
 }
 						</code></pre>
 					</section>
@@ -99,6 +97,7 @@ final class PingPong(value: Int){
 						<aside class="notes">
 							<ol>
 								<li>First introduced ScalaUpNorth, Montreal, QC 2016</li>
+								<li>Goal: No external dependency</li>
 							</ol>
 						</aside>
 					</section>
@@ -125,10 +124,7 @@ final class Foo{
 						</code></pre>
 						<aside class="notes">
 							<ol>
-								<li>No external dependency</li>
-								<li>Don't use or reinvent Trampolines.</li>
-								<li>No object allocations.</li>
-								<li>Talk about tailrec isomorphism</li>
+								<li>No change in method signature</li>
 							</ol>
 						</aside>
 					</section>
@@ -145,6 +141,13 @@ final class Foo{
   //more...
 }
 						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Talk about tailrec isomorphism</li>
+								<li>Don't use or reinvent Trampolines.</li>
+								<li>Side Benefit: No additional object allocations.</li>
+							</ol>
+						</aside>
 					</section>
 					<section>
 						<h3>Fn Body Transformation</h3>
@@ -180,6 +183,11 @@ final class Foo{
 					</section>
 					<section>
 						<p>TODO: compilation error</p>
+						<aside class="notes">
+							<ol>
+								<li>Method size limitations</li>
+							</ol>
+						</aside>
 					</section>
 				</section>
 				<section>
@@ -188,7 +196,7 @@ final class Foo{
 						<img src="img/dont_worry_size.jpeg">
 						<aside class="notes">
 							<ol>Challenges
-								<li>Method size limitations</li>
+								<li>This problem mentioned on old Scala-lang forums (2007)</li>
 								<li>JVM large method optimization troubles</li>
 							</ol>
 						</aside>
