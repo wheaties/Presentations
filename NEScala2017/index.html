@@ -182,7 +182,22 @@ final class Foo{
 						<p>version 0.3.1</p>
 					</section>
 					<section>
-						<p>TODO: compilation error</p>
+						<h3>But...</h3>
+						<pre><code class="scala">
+final class BlowUpTooLarge{
+  @mutualrec def one(a1: Any, a2: Any, a3: Any) = (a1, a2, a3) match{
+    case (_, _, List(Option(1))) => //code
+    //lots more code
+  }
+
+  //lots more large but not too large methods...
+}
+						</code></pre>
+						<p>there's a problem</p>
+						<pre><code class="scala">
+[error] Could not write class example/BlowUpTooLarge because it exceeds 
+        JVM code size limits. Method mutual_fn$0's code too large!
+						</code></pre>
 						<aside class="notes">
 							<ol>
 								<li>Method size limitations</li>
