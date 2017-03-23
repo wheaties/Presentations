@@ -1,0 +1,386 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>A Tail of TwoTails</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/beige.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/pojoaque.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h1>A Tail of TwoTails</h1>
+					<h2>The Second Act</h2>
+					<p>
+						<small><a href="https://twitter.com/OweinReese">@OweinReese</a></small>
+					</p>
+					<aside class="notes">
+						<ol>
+							<li>What is Twotails</li>
+							<li>How the First Scheme Works</li>
+							<li>How the Second Scheme Works</li>
+							<li>Using</li>
+						</ol>
+					</aside>
+				</section>
+				<section>
+					<section>
+						<h2>Mutual Tail Recursion?</h2>
+						<img src="img/some_cake.jpeg">
+					</section>
+					<section>
+						<h3>General Recursion</h3>
+						<pre><code class="scala">
+object MaxNode{ 
+  def find(tree: Tree): Int = tree match{
+    case Leaf(v)           => v
+    case Node(left, right) => Math.max(find(left), find(right))
+  }
+}
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Not stack safe</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<h3>Tail Recursion</h3>
+						<pre><code class="scala">
+import scala.annotation.tailrec
+
+final class Contains[A](value: A){
+  @tailrec def contains(rem: List[A]): Boolean = rem match{
+    case Nil          => false
+    case `value` :: t => true
+    case _ :: t       => contains(t)
+  }
+}
+						</code></pre>
+						<aside class="notes">
+							<ul>
+								<li>made possible by tail call position</li>
+								<li>Transformed into a looping construct</li>
+							</ul>
+						</aside>
+					</section>
+					<section>
+						<h3>Mutual Tail Recursion</h3>
+						<pre><code class="scala">
+final class PingPong(value: Int){
+  def ping(x: Int): Int = if(x < value) x else pong(x - 1)
+  def pong(x: Int): Int = if(x < value) x else ping(x - 1)
+}
+						</code></pre>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>First Act Recap</h2>
+						<img src="img/dance.png">
+						<aside class="notes">
+							<ol>
+								<li>First introduced ScalaUpNorth, Montreal, QC 2016</li>
+								<li>Goal: No external dependency</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<h3>Start Here</h3>
+						<pre><code class="scala">
+final class Foo{
+  def methodA(x: Int): Int = //code, depends on methodB...
+  def methodB(x: Int): Int = //code, depends on methodA...
+  //more...
+}
+						</code></pre>
+					</section>
+					<section>
+						<h3>End Here</h3>
+						<pre><code class="scala">
+import twotails.mutualrec
+
+final class Foo{
+  @mutualrec def methodA(x: Int): Int = //code, depends on methodB...
+  @mutualrec def methodB(x: Int): Int = //code, depends on methodA...
+  //more...
+}
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>No change in method signature</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<h3>First Scheme</h3>
+						<pre><code class="scala">
+final class Foo{
+  @tailrec private def mutual_fn$0(indx: Int, x: Int): Int = indx match{
+    case 0 => //code for methodA...
+    case 1 => //code for methodB...
+  }
+  def methodA(x: Int): Int = mutual_fn$0(0, x)
+  def methodB(x: Int): Int = mutual_fn$0(1, x)
+  //more...
+}
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Talk about tailrec isomorphism</li>
+								<li>Don't use or reinvent Trampolines.</li>
+								<li>Side Benefit: No additional object allocations.</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<h3>Fn Body Transformation</h3>
+						<pre><code class="scala">
+  def methodA[X](x: X): X = if(pred(x)) f(x) else methodB(x)
+						</code></pre>
+						<p>Substitutions Required</p>
+						<table>
+							<tr>
+								<td>Type Params</td>
+								<td><pre><code class="scala">X(methodA)</code></pre></td>
+								<td>-></td>
+								<td><pre><code class="scala">X(mutual_fn$0)</code></pre></td>
+							</tr>
+							<tr>
+								<td>Fn Args</td>
+								<td><pre><code class="scala">x(methodA)</code></pre></td>
+								<td>-></td>
+								<td><pre><code class="scala">x(mutual_fn$0)</code></pre></td>
+							</tr>
+							<tr>
+								<td>Apply</td>
+								<td><pre><code class="scala">methodB(...) </code></pre></td>
+								<td>-></td>
+								<td><pre><code class="scala">mutual_fn$0(1, ...)  </code></pre></td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h2>Success!</h2>
+						<img src="img/perfect.gif">
+						<p>version 0.3.1</p>
+					</section>
+					<section>
+						<h3>But...</h3>
+						<pre><code class="scala">
+final class BlowUpTooLarge{
+  @mutualrec def one(a1: Any, a2: Any, a3: Any) = (a1, a2, a3) match{
+    case (_, _, List(Option(1))) => //code
+    //lots more code
+  }
+
+  //lots more large but not too large methods...
+}
+						</code></pre>
+						<p>there's a problem</p>
+						<pre><code class="scala">
+[error] Could not write class example/BlowUpTooLarge because it exceeds 
+        JVM code size limits. Method mutual_fn$0's code too large!
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>Method size limitations</li>
+							</ol>
+						</aside>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>The Second Act</h2>
+						<img src="img/dont_worry_size.jpeg">
+						<aside class="notes">
+							<ol>Challenges
+								<li>This problem mentioned on old Scala-lang forums (2007)</li>
+								<li>JVM large method optimization troubles</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<h3>Start Here</h3>
+						<pre><code class="scala">
+final class Foo{
+  def methodA(x: Int): Int = //code, depends on methodB...
+  def methodB(x: Int): Int = //code, depends on methodA...
+  //more...
+}
+						</code></pre>
+					</section>
+					<section>
+						<h3>End Here</h3>
+						<pre><code class="scala">
+import twotails.mutualrec
+
+final class Foo{
+  @mutualrec def methodA(x: Int): Int = //code, depends on methodB...
+  @mutualrec def methodB(x: Int): Int = //code, depends on methodA...
+  //more...
+}
+						</code></pre>
+					</section>
+					<section>
+						<h3>Same Shape, sorta</h3>
+						<pre><code class="scala">
+final class Foo{
+  private def mutual_fn$0(indx: Int, x: Int): Int = //but...
+
+  def methodA(x: Int): Int = mutual_fn$0(0, x)
+  def methodB(x: Int): Int = mutual_fn$0(1, x)
+  //more...
+}
+						</code></pre>
+						<aside class="notes">
+							<ol>
+								<li>No tailrec</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<h3>More Complicated</h3>
+						<pre><code class="scala">
+  private def mutual_fn$0(indx: Int, x: Int): Int = {
+    var indx$: Int = indx
+    var x$: Int = x
+    var cont$ = true
+    var result$: Int = 0
+    def methodA$(): Unit = //code for methodA
+    def methodB$(): Unit = //code for methodB
+    while(cont$){
+      indx$ match{
+        case 0 => methodA$()
+        case 1 => methodB$()
+      }
+    }
+    result$
+  }
+						</code></pre>
+					</section>
+					<section>
+						<h3>Fn Body Transformation</h3>
+						<pre><code class="scala">
+  def methodA[X](x: X): X = if(pred(x)) f(x) else methodB(x)
+						</code></pre>
+						<p>Substitutions Required</p>
+						<table>
+							<tr>
+								<td>Type Params</td>
+								<td><pre><code class="scala">X(methodA)</code></pre></td>
+								<td>-></td>
+								<td><pre><code class="scala">X(mutual_fn$0)</code></pre></td>
+							</tr>
+							<tr>
+								<td>Fn Args</td>
+								<td><pre><code class="scala">x(methodA)</code></pre></td>
+								<td>-></td>
+								<td><pre><code class="scala">x$(mutual_fn$0)</code></pre></td>
+							</tr>
+							<tr>
+								<td>Apply</td>
+								<td><pre><code class="scala">methodB(y) </code></pre></td>
+								<td>-></td>
+								<td><pre><code class="scala">indx$ = 1
+x$ = y</code></pre></td>
+							</tr>
+							<tr>
+								<td>Termination</td>
+								<td><pre><code class="scala">f(x)</code></pre></td>
+								<td>-></td>
+								<td><pre><code class="scala">result$ = f(x$)
+cont$ = false    </code></pre></td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h2>Happy</h2>
+						<img src="img/everyone_dance.gif">
+					</section>
+				</section>
+				<section>
+					<section>
+						<h2>Recurse Like Me</h2>
+						<img src="img/you_too.jpeg">
+						<aside class="notes">
+							<ol>
+								<li>notes</li>
+							</ol>
+						</aside>
+					</section>
+					<section>
+						<h3>Include</h3>
+						<pre><code class="scala">
+libraryDependencies ++= Seq(
+  compilerPlugin("com.github.wheaties" %% "twotails" % "0.3.1" cross CrossVersion.full),
+  "com.github.wheaties" %% "twotails-annotations" % "0.3.1" cross CrossVersion.full
+)
+						</code></pre>
+						<p>or</p>
+						<pre><code class="scala">
+libraryDependencies ++= Seq(
+  compilerPlugin("com.github.wheaties" %% "twotails" % "0.4.0-SNAPSHOT" cross CrossVersion.full),
+  "com.github.wheaties" %% "twotails-annotations" % "0.4.0-SNAPSHOT" cross CrossVersion.full
+)
+						</code></pre>
+					</section>
+					<section>
+						<h3>Plugin Options</h3>
+						<pre><code class="scala">
+scalacOptions += "-Ptwotails:size" //equivalent to no options
+						</code></pre>
+						<p>or</p>
+						<pre><code class="scala">
+scalacOptions += "-Ptwotails:memory" //optimize for method allocations
+						</code></pre>
+					</section>
+					<section>
+						<h3>Bug Reports</h3>
+						<p><a href="www.github.com/Wheaties/TwoTails">www.github.com/Wheaties/TwoTails</a></p>
+						<small>(contributions too!)</small>
+					</section>
+					<section>
+						<h2>Thanks</h2>
+						<p><a href="https://twitter.com/OweinReese">@OweinReese</a></p>
+					</section>
+				</section>
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+			Reveal.initialize({
+				history: true,
+				minScale: 0.7,
+				maxScale: 1.0,
+
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'plugin/notes-server/client.js', async: true }
+				]
+			});
+		</script>
+	</body>
+</html>
