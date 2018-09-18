@@ -1,0 +1,202 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Pushing Bounds with Descriptors</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/moon.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/zenburn.css">
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<h2>Pushing the Bounds</h2>
+					<h3>...with Descriptors</h3>
+					<small><a href="https://twitter.com/OweinReese">@OweinReese</a></small>
+				</section>
+				<section>
+					<section>
+						<h3>Hello, Descriptors</h3>
+						<img src="" height="250" width="400">
+					</section>
+					<section>
+						<p>Any class which defines one of</p>
+						<pre><code class="python">
+class Protocol:
+  def __get__(self, obj, obj_type=None):
+  def __set__(self, obj, value):
+  def __delete__(self, obj):
+						</code></pre>
+					</section>
+					<section>
+						<p>Tediously write it out every time</p>
+						<pre><code class="python">
+class Foo:
+  @property
+  def port(self):
+    return int(os.environ('HELLO_PORT'))
+
+  @property
+  def secret_key(self):
+    return decrypt(os.environ('HELLO_SKEY'), 'AES')
+						</code></pre>
+					</section>
+					<section>
+						<p>...or build a reusable pattern</p>
+						<pre><code class="python">
+class Foo:
+  port = Environ('HELLO_PORT', convert=int)
+  secret_key = EncryptedEnviron('HELLO_SKEY', 'AES')
+  account_name = Environ('HELLO_ACCOUNT', default='test')
+  api_uri = Environ('HELLO_API_URI')
+						</code></pre>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h3>Write Once Fields</h3>
+					</section>
+					<section>
+						<blockquote>Immutable objects are simple. They can only be in one state...</blockquote> - <i>Brian Goetz</i>
+					</section>
+					<section>
+						<p>naive example with state</p>
+						<pre><code class="python">
+class WriteOnce:
+  def __init__(self):
+    self.value = None
+  
+  def __set__(self, obj, value):
+    if self.value is None:
+      raise AttributeError
+    self.value = value
+
+  def __get__(self, obj, obj_type=None):
+    return self.value
+						</code></pre>
+					</section>
+					<section>
+						<p>Is this really doing what we want?</p>
+						<pre><code class="python">
+>>> class OhNo:
+...   x = WriteOnce()
+... 
+>>> a, b = OhNo(), OhNo()
+>>> a.x = 4
+>>> b.x
+4
+						</code></pre>
+					</section>
+					<section>
+						<pre><code class="python">
+from weakref import WeakKeyDictionary
+from collections.abc import Hashable
+
+class WriteOnce:
+  def __init__(self):
+    self.__values = WeakKeyDictionary()
+
+  def __set__(self, obj, value):
+    if not isinstance(obj, Hashable) or obj in self.__values:
+      raise AttributeError
+    self.__values[obj] = value
+						</code></pre>
+					</section>
+					<section>
+						<pre><code class="python">
+  def __get__(self, obj, obj_type=None):
+    if isinstance(obj, Hashable) and obj in self.__values:
+      return self.__values(obj)
+    raise AttributeError
+						</code></pre>
+					</section>
+					<section></section>
+				</section>
+				<section>
+					<section>Persistent Data Structures</section>
+					<section>fully persistent</section>
+					<section>immutable</section>
+					<section>partially persistent</section>
+					<section>
+						<pre><code class="python">
+class StatefulProxy:
+  def __init__(self, ref):
+    self.__ref = ref
+    self.__tm = datetime.now()
+
+  def view(self, timestamp):
+    if timestamp > self.__tm:
+      timestamp = self.__tm
+    return self.__ref.greatest_lower(timestamp)
+
+  @property
+  def current(self):
+    return self.view(self.__tm)
+						</code></pre>
+					</section>
+				</section>
+				<section>
+					<section>Mini-Factory of Proxy Objects</section>
+					<section>
+						<pre><code class="python">
+class UriListener:
+  def __init__(self, uri):
+    self.store = TimestampDict()
+    self.read_counts = Metrics.guage(uri)
+    _poll_resource(self.store, uri)
+
+  def __get__(self, obj, obj_type=None):
+    if obj_type is None:
+      self.read_counts.incr()
+      return StatefulProxy(self.store)
+
+    return _MetricProxy(self.store, self.read_counts)
+						</code></pre>
+					</section>
+					
+					<section><pre><code class="python">
+
+					</code></pre></section>
+					<section>
+						<li>
+							<ol>can view old values</ol>
+							<ol>proxy object used for updating</ol>
+							<ol>gather metrics recording changes</ol>
+						</li>
+					</section>
+				</section>
+				<section>Interactions w/ Enclosing Classes</section>
+				<section>Conclusion</section>
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+			Reveal.initialize({
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+	</body>
+</html>
