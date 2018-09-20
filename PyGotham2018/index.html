@@ -31,8 +31,9 @@
 				</section>
 				<section>
 					<section>
-						<h3>Hello, Descriptors</h3>
+						<h3>Descriptors</h3>
 						<img src="" height="250" width="400">
+						<p>What are these things?</p>
 					</section>
 					<section>
 						<p>Any class which defines one of</p>
@@ -44,7 +45,7 @@ class Protocol:
 						</code></pre>
 					</section>
 					<section>
-						<p>Tediously write it out every time</p>
+						<p>Why do I care?</p>
 						<pre><code class="python">
 class Foo:
   @property
@@ -57,7 +58,7 @@ class Foo:
 						</code></pre>
 					</section>
 					<section>
-						<p>...or build a reusable pattern</p>
+						<p>reusable property-like constructs</p>
 						<pre><code class="python">
 class Foo:
   port = Environ('HELLO_PORT', convert=int)
@@ -70,9 +71,7 @@ class Foo:
 				<section>
 					<section>
 						<h3>Write Once Fields</h3>
-					</section>
-					<section>
-						<blockquote>Immutable objects are simple. They can only be in one state...</blockquote> - <i>Brian Goetz</i>
+						<blockquote>Immutable objects are simple. They can only be in one state... - Brian Goetz</blockquote>
 					</section>
 					<section>
 						<p>naive example with state</p>
@@ -82,7 +81,7 @@ class WriteOnce:
     self.value = None
   
   def __set__(self, obj, value):
-    if self.value is None:
+    if self.value is not None:
       raise AttributeError
     self.value = value
 
@@ -102,6 +101,7 @@ class WriteOnce:
 4
 						</code></pre>
 					</section>
+					<section>some silly frustrated face picture</section>
 					<section>
 						<pre><code class="python">
 from weakref import WeakKeyDictionary
@@ -115,69 +115,66 @@ class WriteOnce:
     if not isinstance(obj, Hashable) or obj in self.__values:
       raise AttributeError
     self.__values[obj] = value
+
+  #define __get__ similarly
 						</code></pre>
 					</section>
 					<section>
 						<pre><code class="python">
-  def __get__(self, obj, obj_type=None):
-    if isinstance(obj, Hashable) and obj in self.__values:
-      return self.__values(obj)
-    raise AttributeError
+class PracticallyImmutable:
+  one = WriteOnce()
+  two = WriteOnce()
+
+  def __init__(self, one, two):
+    self.one = one
+    self.two = two
 						</code></pre>
 					</section>
-					<section></section>
 				</section>
 				<section>
-					<section>Persistent Data Structures</section>
-					<section>fully persistent</section>
-					<section>immutable</section>
-					<section>partially persistent</section>
+					<section>
+						<h3>Persistent Data Structures</h3>
+					</section>
+					<section>fully persistent - think "immutable" but not limited to immutable, only</section>
+					<section>partially persistent - think "log structured"</section>
 					<section>
 						<pre><code class="python">
-class StatefulProxy:
-  def __init__(self, ref):
-    self.__ref = ref
-    self.__tm = datetime.now()
+class PracticallyPersistent:
+  def __init__(self, size=50):
+    self.cache = TimestampCache.create(size=size)
 
-  def view(self, timestamp):
-    if timestamp > self.__tm:
-      timestamp = self.__tm
-    return self.__ref.greatest_lower(timestamp)
-
-  @property
-  def current(self):
-    return self.view(self.__tm)
+  def __setattr__(self, name, value):
+    copy_of_obj = read_only_copy(self)
+    self.cache.add(datetime.now(), copy_of_obj)
+    #now update it...
 						</code></pre>
 					</section>
 				</section>
 				<section>
-					<section>Mini-Factory of Proxy Objects</section>
+					<section>
+						<h3>Mini-Factory of Proxy Objects</h3>
+					</section>
 					<section>
 						<pre><code class="python">
 class UriListener:
-  def __init__(self, uri):
-    self.store = TimestampDict()
-    self.read_counts = Metrics.guage(uri)
-    _poll_resource(self.store, uri)
+  def __init__(self, uri, interval=3600):
+    self.value = PracticallyPersistent()
+    self.uri = uri
+    Polling.loop(self.value, uri, interval)
 
   def __get__(self, obj, obj_type=None):
-    if obj_type is None:
-      self.read_counts.incr()
-      return StatefulProxy(self.store)
-
-    return _MetricProxy(self.store, self.read_counts)
+    if obj_type is not None:
+      return Polling.metrics(self.uri)
+    
+    self.read_counts.incr()
+    return ReadOnlyProxy(self.value)
 						</code></pre>
 					</section>
-					
-					<section><pre><code class="python">
-
-					</code></pre></section>
 					<section>
-						<li>
-							<ol>can view old values</ol>
-							<ol>proxy object used for updating</ol>
-							<ol>gather metrics recording changes</ol>
-						</li>
+						need blurb about async processes in python and mutable state. web request comes in, calls see same value for same request
+						<pre><code class="python">
+
+						</code></pre>
 					</section>
 				</section>
 				<section>Interactions w/ Enclosing Classes</section>
