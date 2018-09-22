@@ -133,38 +133,49 @@ class PracticallyImmutable:
 				</section>
 				<section>
 					<section>
-						<h3>Persistent Data Structures</h3>
-					</section>
-					<section>fully persistent - think "immutable" but not limited to immutable, only</section>
-					<section>partially persistent - think "log structured"</section>
-					<section>
-						<pre><code class="python">
-class PracticallyPersistent:
-  def __init__(self, size=50):
-    self.cache = TimestampCache.create(size=size)
-
-  def __setattr__(self, name, value):
-    copy_of_obj = read_only_copy(self)
-    self.cache.add(datetime.now(), copy_of_obj)
-    #now update it...
-						</code></pre>
-					</section>
-				</section>
-				<section>
-					<section>
 						<h3>Mini-Factory of Proxy Objects</h3>
 					</section>
+					<section>
+						<p>Simple pattern</p>
+						<pre><code class="python">
+def __get__(self, obj, obj_type=None):
+  if obj_type is not None:
+    return self
+
+  return self.__values[obj]
+						</code></pre>
+					</section>
+					<section>
+						<p>Global state...</p>
+						<pre><code class="python">
+class SomeDescriptor:
+  def __init__(self):
+    self.global_state = "hello"
+
+  def __get__(self, obj, obj_type=None):
+    if obj_type is not None:
+      return self
+						</code></pre>
+					</section>
+					<section>Object Oriented <img>turtles all the way down</img></section>
+					<section>
+						<pre><code class="python">
+def __get__(self, obj, obj_type=None):
+  if obj_type is not None:
+    return self.class_call(obj, obj_type)
+
+  return self.object_call(obj)
+						</code></pre></section>
 					<section>
 						<pre><code class="python">
 class UriListener:
   def __init__(self, uri, interval=3600):
-    self.value = PracticallyPersistent()
-    self.uri = uri
-    Polling.loop(self.value, uri, interval)
+    self.value = self._begin_loop(uri, interval)
+    self.read_counts = Metrics.guage(uri)
 
   def __get__(self, obj, obj_type=None):
     if obj_type is not None:
-      return Polling.metrics(self.uri)
+      return ReadOnlyProxy(self.read_counts)
     
     self.read_counts.incr()
     return ReadOnlyProxy(self.value)
@@ -174,6 +185,27 @@ class UriListener:
 						need blurb about async processes in python and mutable state. web request comes in, calls see same value for same request
 						<pre><code class="python">
 
+						</code></pre>
+					</section>
+				</section>
+				<section>
+					<section>
+						<h3>Persistent Data Structures</h3>
+					</section>
+					<section>fully persistent - think "immutable" but not limited to immutable, only</section>
+					<section>partially persistent - think "log structured"</section>
+					<section>
+						<pre><code class="python">
+class PracticallyPersistent:
+  def __init__(self, obj, size=50):
+    self.obj = obj
+    self.cache = TimestampCache.create(size=size)
+
+  def __setattr__(self, name, value):
+    if getattr(self.obj, name) != value:
+      copy_of_obj = read_only_copy(self.obj)
+      self.cache.add(datetime.now(), copy_of_obj)
+      #now update it...
 						</code></pre>
 					</section>
 				</section>
