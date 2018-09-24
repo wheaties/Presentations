@@ -26,7 +26,7 @@
 			<div class="slides">
 				<section>
 					<h2>Pushing the Bounds</h2>
-					<h3>...with Descriptors</h3>
+					<h3>with Descriptors</h3>
 					<small><a href="https://twitter.com/OweinReese">@OweinReese</a></small>
 				</section>
 				<section>
@@ -120,6 +120,7 @@ class WriteOnce:
 						</code></pre>
 					</section>
 					<section>
+						<p>Look Ma, 70% of NamedTuple</p>
 						<pre><code class="python">
 class PracticallyImmutable:
   one = WriteOnce()
@@ -150,7 +151,7 @@ def __get__(self, obj, obj_type=None):
 						<pre><code class="python">
 class SomeDescriptor:
   def __init__(self):
-    self.global_state = "hello"
+    self.global_state = "change me, I'm mutable"
 
   def __get__(self, obj, obj_type=None):
     if obj_type is not None:
@@ -159,23 +160,16 @@ class SomeDescriptor:
 					</section>
 					<section>Object Oriented <img>turtles all the way down</img></section>
 					<section>
-						<pre><code class="python">
-def __get__(self, obj, obj_type=None):
-  if obj_type is not None:
-    return self.class_call(obj, obj_type)
-
-  return self.object_call(obj)
-						</code></pre></section>
-					<section>
+						<p>True Encapsulation</p>
 						<pre><code class="python">
 class UriListener:
   def __init__(self, uri, interval=3600):
-    self.value = self._begin_loop(uri, interval)
+    self.value = self.begin_loop(uri, interval)
     self.read_counts = Metrics.guage(uri)
 
   def __get__(self, obj, obj_type=None):
     if obj_type is not None:
-      return ReadOnlyProxy(self.read_counts)
+      return GuageProxy(self.read_counts)
     
     self.read_counts.incr()
     return ReadOnlyProxy(self.value)
