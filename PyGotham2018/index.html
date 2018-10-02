@@ -43,6 +43,8 @@ class Protocol:
   def __set__(self, obj, value):
   def __delete__(self, obj):
 						</code></pre>
+						<p>...and in Python 3.6 or later</p>
+						<pre><code class="python">  def __set_name__(self, clazz, name):</code></pre>
 					</section>
 					<section>
 						<p>Why do I care?</p>
@@ -71,6 +73,7 @@ class Foo:
 				<section>
 					<section>
 						<h3>Write Once Fields</h3>
+						<br>
 						<blockquote>Immutable objects are simple. They can only be in one state... - Brian Goetz</blockquote>
 					</section>
 					<section>
@@ -101,8 +104,8 @@ class WriteOnce:
 4
 						</code></pre>
 					</section>
-					<section>some silly frustrated face picture</section>
 					<section>
+						<p>Much safer</p>
 						<pre><code class="python">
 from weakref import WeakKeyDictionary
 from collections.abc import Hashable
@@ -120,7 +123,7 @@ class WriteOnce:
 						</code></pre>
 					</section>
 					<section>
-						<p>Look Ma, 70% of NamedTuple</p>
+						<p>Look Ma, 30% of NamedTuple</p>
 						<pre><code class="python">
 class PracticallyImmutable:
   one = WriteOnce()
@@ -135,12 +138,13 @@ class PracticallyImmutable:
 				<section>
 					<section>
 						<h3>Mini-Factory of Proxy Objects</h3>
+						<img src="" height="250" width="400">
 					</section>
 					<section>
 						<p>Simple pattern</p>
 						<pre><code class="python">
 def __get__(self, obj, obj_type=None):
-  if obj_type is not None:
+  if obj is None:
     return self
 
   return self.__values[obj]
@@ -154,57 +158,106 @@ class SomeDescriptor:
     self.global_state = "change me, I'm mutable"
 
   def __get__(self, obj, obj_type=None):
-    if obj_type is not None:
+    if obj is None:
       return self
 						</code></pre>
 					</section>
-					<section>Object Oriented <img>turtles all the way down</img></section>
 					<section>
 						<p>True Encapsulation</p>
 						<pre><code class="python">
-class UriListener:
+class UriPollingValue:
   def __init__(self, uri, interval=3600):
     self.value = self.begin_loop(uri, interval)
-    self.read_counts = Metrics.guage(uri)
+    self.read_counts = Metrics.gauge(uri)
 
   def __get__(self, obj, obj_type=None):
-    if obj_type is not None:
-      return GuageProxy(self.read_counts)
+    if obj is None:
+      return GaugeProxy(self.read_counts)
     
     self.read_counts.incr()
     return ReadOnlyProxy(self.value)
 						</code></pre>
 					</section>
+				</section>
+				<section>
 					<section>
-						need blurb about async processes in python and mutable state. web request comes in, calls see same value for same request
+						<h3>Interactions w/ Enclosing Classes</h3>
+						<img src="" height="250" width="400">
+					</section>
+					<section>
+						<p>Models w/ Fields</p>
 						<pre><code class="python">
+class ListingData(Model):
+  seller = SellerDataField()
+  inventory_location = WarehouseDataField()
+  balance = CreditField()
+  #more expensive to query fields...
+						</code></pre>
+					</section>
+					<section>
+						<h4>Interlude: Persistent Data Structures</h4>
+						<ul>
+							<li>Immutable</li>
+							<li>Fully Persistent</li>
+							<li>Partially Persistent</li>
+						</ul>
+					</section>
+					<section>
+						<p>Core functionality</p>
+						<pre><code class="python">
+class PartiallyPersistent:
+  def __init__(self, size=50):
+    self.cache = TimestampCache.create(size=size)
 
+  def __setattr__(self, name, value):
+    if getattr(self, name) != value:
+      copy_of_obj = read_only_copy(self)
+      self.cache.add(datetime.now(), copy_of_obj)
+      #now update it...
+						</code></pre>
+					</section>
+					<section>
+						<p>A polling Model class interface</p>
+						<pre><code class="python">
+class PersistantPollingModel:
+  def _update(self): pass
+  def _persist_copy(self, kv, timestamp): pass
+  def begin_polling(self): pass
+  def view(self, timestamp=None): pass
+						</code></pre>
+					</section>
+					<section>
+						<p>...continued</p>
+						<pre><code class="python">
+class PersistantPollingModel:
+  def _update(self):
+    polled_time = datetime.now()
+    current = {}
+    for field in self._fields:
+      key, value = field(self.resource)
+      current[key] = value
+    self._persist_copy(current, polled_time)
+    #...
+						</code></pre>
+					</section>
+					<section>
+						<p>The Field class</p>
+						<pre><code class="python">
+class Field:
+  def __get__(self, obj, obj_type=None):
+    if obj is None:
+      return PollingMetricsProxy(self)
+
+    return self.update_fn
 						</code></pre>
 					</section>
 				</section>
 				<section>
 					<section>
-						<h3>Persistent Data Structures</h3>
-					</section>
-					<section>fully persistent - think "immutable" but not limited to immutable, only</section>
-					<section>partially persistent - think "log structured"</section>
-					<section>
-						<pre><code class="python">
-class PracticallyPersistent:
-  def __init__(self, obj, size=50):
-    self.obj = obj
-    self.cache = TimestampCache.create(size=size)
-
-  def __setattr__(self, name, value):
-    if getattr(self.obj, name) != value:
-      copy_of_obj = read_only_copy(self.obj)
-      self.cache.add(datetime.now(), copy_of_obj)
-      #now update it...
-						</code></pre>
+						<h3>Conclusion</h3>
+						<p><small><a href="https://twitter.com/OweinReese">@OweinReese</a></small></p>
 					</section>
 				</section>
-				<section>Interactions w/ Enclosing Classes</section>
-				<section>Conclusion</section>
 			</div>
 		</div>
 
