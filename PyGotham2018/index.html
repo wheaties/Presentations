@@ -32,7 +32,8 @@
 				<section>
 					<section>
 						<h3>Descriptors</h3>
-						<img src="" height="250" width="400">
+						<!--<img src="https://bridoz.com/wp-content/uploads/2015/05/cube-nourriture-parfait-1.jpg" height="318" width="400">-->
+						<img src="images/food_cubes.jpg" height="390" width="640">
 						<p>What are these things?</p>
 					</section>
 					<section>
@@ -213,7 +214,7 @@ class PartiallyPersistent:
     if getattr(self, name) != value:
       copy_of_obj = read_only_copy(self)
       self.cache.add(datetime.now(), copy_of_obj)
-      #now update it...
+    super().__setattr__(name, value)
 						</code></pre>
 					</section>
 					<section>
@@ -237,7 +238,6 @@ class PersistantPollingModel:
       key, value = field(self.resource)
       current[key] = value
     self._persist_copy(current, polled_time)
-    #...
 						</code></pre>
 					</section>
 					<section>
@@ -246,9 +246,11 @@ class PersistantPollingModel:
 class Field:
   def __get__(self, obj, obj_type=None):
     if obj is None:
-      return PollingMetricsProxy(self)
+      return self.__name__
 
-    return self.update_fn
+    return self
+
+  #def __call__(self, resource):
 						</code></pre>
 					</section>
 				</section>
