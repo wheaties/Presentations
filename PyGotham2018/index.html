@@ -139,15 +139,29 @@ class PracticallyImmutable:
 				<section>
 					<section>
 						<h3>Mini-Factory of Proxy Objects</h3>
-						<img src="" height="250" width="400">
+						<img src="images/ice_cream_belt.png" height="360" width="640">
 					</section>
 					<section>
-						<p>Simple pattern</p>
+						<p>Attributing access metrics</p>
+						<pre><code class="python">
+class SomeClass:
+  def __init__(self, name):
+    self.read_counts = Metrics.guage(name)
+
+  @property
+  def some_field(self):
+    self.read_counts.inc()
+    return self.__some_value
+						</code></pre>
+					</section>
+					<section>
+						<p>Simple pattern with a descriptor</p>
 						<pre><code class="python">
 def __get__(self, obj, obj_type=None):
   if obj is None:
     return self
 
+  self.read_counts.inc()
   return self.__values[obj]
 						</code></pre>
 					</section>
@@ -183,7 +197,7 @@ class UriPollingValue:
 				<section>
 					<section>
 						<h3>Interactions w/ Enclosing Classes</h3>
-						<img src="" height="250" width="400">
+						<img src="images/torte.jpg" height="476" width="640">
 					</section>
 					<section>
 						<p>Models w/ Fields</p>
@@ -234,7 +248,7 @@ class PersistantPollingModel:
   def _update(self):
     polled_time = datetime.now()
     current = {}
-    for field in self._fields:
+    for field in PersistantPollingModel.fields:
       key, value = field(self.resource)
       current[key] = value
     self._persist_copy(current, polled_time)
@@ -246,11 +260,10 @@ class PersistantPollingModel:
 class Field:
   def __get__(self, obj, obj_type=None):
     if obj is None:
-      return self.__name__
+      return FieldResourceQuery(self)
 
-    return self
-
-  #def __call__(self, resource):
+    #return the latest polled attribute
+    return getattr(obj.view(), name)
 						</code></pre>
 					</section>
 				</section>
